@@ -22,6 +22,7 @@ class ConvolutionalNeuralNetwork {
         std::vector<std::vector<std::vector<float>>> kernelsW2;
         std::vector<std::vector<std::vector<float>>> kernelsW3;
         int DenseLayerSize;
+        std::vector<float> inputDesnse;
     public:
     ConvolutionalNeuralNetwork() {
 
@@ -123,7 +124,36 @@ class ConvolutionalNeuralNetwork {
         std::cout << "max pool size y: " <<  MaxPoolRedTwo[0].size() << std::endl;
         DenseLayerSize = (MaxPoolRedTwo.size() * MaxPoolRedTwo[0].size()) + (MaxPoolGreenTwo.size() * MaxPoolGreenTwo[0].size()) + (MaxPoolBlueTwo.size() * MaxPoolBlueTwo[0].size()); 
         std::cout << "total dense layer: " << DenseLayerSize << std::endl; 
+        
+        //    
+        // Normalization dense layer
+        //
+        for (int i=0; i<MaxPoolRedTwo.size(); i++) {
+            for (int j=0; j<MaxPoolRedTwo[0].size(); j++) {
+                inputDesnse.push_back(MaxPoolRedTwo[i][j]);
+            } 
+        } 
+        for (int i=0; i<MaxPoolGreenTwo.size(); i++) {
+            for (int j=0; j<MaxPoolGreenTwo[0].size(); j++) {
+                inputDesnse.push_back(MaxPoolGreenTwo[i][j]);
+            } 
+        }
+        for (int i=0; i<MaxPoolBlueTwo.size(); i++) {
+            for (int j=0; j<MaxPoolBlueTwo[0].size(); j++) {
+                inputDesnse.push_back(MaxPoolBlueTwo[i][j]);
+            } 
+        } 
+        std::cout << "inputDesnse.size(): " << inputDesnse.size() << std::endl;
+        int minInputDense = FindMin(inputDesnse);
+        int maxInputDense = FindMax(inputDesnse);
 
+          
+        for (int j=0; j<inputDesnse.size(); j++) {
+            std::cout << "num: " << j << " inputDesnse: " << NormalizeImage(inputDesnse[j], 1.0f, (float)minInputDense, (float)maxInputDense) << std::endl;
+        }
+        std::cout << "----------------------------------" << std::endl;
+        std::cout << "inputDesnse min: " << minInputDense << std::endl;
+        std::cout << "inputDesnse max: " << maxInputDense << std::endl;
         unsigned char pixels[xres * yres * channels];
         int totalPixel = 0;
         for (int i=0; i<xres; i++) {

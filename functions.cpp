@@ -173,6 +173,34 @@ std::vector<std::vector<int>> NormalizeImage(std::vector<std::vector<float>> ima
     }
     return output; 
 }
+template <class T>
+std::vector<std::vector<T>> NormalizeImage(std::vector<std::vector<T>> image, T span, T min, T max){
+    int sizeX = image.size(); 
+    int sizeY = image[0].size();
+    std::vector<std::vector<T>> output(sizeX, std::vector<T>(sizeY, 0)); 
+    for(unsigned int i = 0; i != sizeX; ++i ) {
+       for(unsigned int j = 0; j != sizeY; ++j ) {
+            output[i][j] = (span * (image[i][j] - min) / (max-min));
+            //std::cout << "output[i][j]: " << output[i][j] << std::endl;
+        } 
+    }
+    return output; 
+}
+template <class T>
+std::vector<T> NormalizeImage(std::vector<T> imageflat, T span, T min, T max){
+    int size = imageflat.size(); 
+    std::vector<T> output;
+    output.resize(size);
+    for(unsigned int i = 0; i != size; ++i ) {
+       output[i] = (span * (imageflat[i] - min) / (max-min));
+
+    }
+    return output; 
+}
+template <class T>
+inline T NormalizeImage(T num, T span, T min, T max){
+    return (span * (num - min) / (max-min)); 
+}
 
 int FindMaxElem(std::vector<std::vector<int>> poolMax){
     int maxNumber = INT_MIN;
@@ -184,6 +212,30 @@ int FindMaxElem(std::vector<std::vector<int>> poolMax){
                 maxNumber = poolMax[i][j];
             }
         }
+    }
+    return maxNumber;
+}
+template <class T>
+T FindMin(std::vector<T> array){
+    T minNumber = INT_MAX;
+    for (int i = 0; i < array.size(); ++i)              // rows
+    {
+        if (array[i] < minNumber) {
+            minNumber = array[i];
+        }
+
+    }
+    return minNumber;
+}
+template <class T>
+T FindMax(std::vector<T> array){
+    T maxNumber = INT_MIN;
+    for (int i = 0; i < array.size(); ++i)              // rows
+    {
+        if (array[i] > maxNumber) {
+            maxNumber = array[i];
+        }
+
     }
     return maxNumber;
 }
