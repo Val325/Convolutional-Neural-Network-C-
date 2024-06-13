@@ -58,6 +58,54 @@ float derivativeSigmoid(float& data) {
     return output;
 }
 
+//
+// Relu
+//
+
+std::vector<float> Relu(const std::vector<float>& data) {
+
+    const unsigned long VECTOR_SIZE = data.size();
+    std::vector<float> output(VECTOR_SIZE);
+    
+    
+    for(unsigned i = 0; i != VECTOR_SIZE; ++i ) {
+        if (data[i] < 0) output[i] = 0;
+        if (data[i] >= 0) output[i] = data[i]; 
+    }
+    
+    return output;
+}
+
+float Relu(const float& data) {
+    float output;
+    if (data < 0) output = 0;
+    if (data >= 0) output = data; 
+    return output;
+}
+
+std::vector<float> derivativeRelu(const std::vector<float>& data) {
+    const unsigned long VECTOR_SIZE = data.size();
+    std::vector<float> output(VECTOR_SIZE);
+     
+    for(unsigned i = 0; i != VECTOR_SIZE; ++i ) {
+        if (data[i] < 0) output[i] = 0;
+        if (data[i] >= 0) output[i] = 1;
+    }
+    
+    return output;
+}
+
+float derivativeRelu(float& data) {
+    float output;
+    if (data < 0) output = 0;
+    if (data >= 0) output = 1; 
+    return output;
+}
+
+//
+//
+//
+
 std::vector<float> softmax(const std::vector<float>& data) { 
     const unsigned long VECTOR_SIZE = data.size();
     std::vector<float> output(VECTOR_SIZE);
@@ -105,206 +153,71 @@ std::vector<std::vector<int>> NormalizeImage(std::vector<std::vector<int>> image
     for(unsigned int i = 0; i != sizeX; ++i ) {
        for(unsigned int j = 0; j != sizeY; ++j ) {
             output[i][j] = 255 * (image[i][j] - min) / (max-min);
-            std::cout << "output[i][j]: " << output[i][j] << std::endl;
+            //std::cout << "output[i][j]: " << output[i][j] << std::endl;
         } 
     }
     return output; 
 }
 
-std::vector<std::vector<int>> ConvolutionRed(std::vector<std::vector<std::vector<unsigned char>>> image){
-    //For normalization
-    int minNumber = INT_MAX;
+
+
+std::vector<std::vector<int>> NormalizeImage(std::vector<std::vector<float>> image, float min, float max){
+    int sizeX = image.size(); 
+    int sizeY = image[0].size();
+    std::vector<std::vector<int>> output(sizeX, std::vector<int>(sizeY, 0)); 
+    for(unsigned int i = 0; i != sizeX; ++i ) {
+       for(unsigned int j = 0; j != sizeY; ++j ) {
+            output[i][j] = (int)(255 * (image[i][j] - min) / (max-min));
+            //std::cout << "output[i][j]: " << output[i][j] << std::endl;
+        } 
+    }
+    return output; 
+}
+
+int FindMaxElem(std::vector<std::vector<int>> poolMax){
     int maxNumber = INT_MIN;
-
-    int redSize = image[0].size();
-    int greenSize = image[1].size();
-    int blueSize = image[2].size();
-
-    int padding = 0;
-    int stride = 2;
-    int filter = 5;
-
-    int sizeX = image[0].size(); 
-    int sizeY = image[0][0].size();
-    //std::cout << "sizeX: " << sizeX << std::endl;
-    //std::cout << "sizeY: " << sizeY << std::endl;
-    std::vector<std::vector<int>> kernel{ 
-        { 0, 0, 3, 0, 0 }, 
-        { 0, 0, 3, 0, 0 }, 
-        { 2, 3, 4, 2, 1 },
-        { 0, 0, 3, 0, 0 }, 
-        { 0, 0, 3, 0, 0 }, 
-    };
-    int convX = ((sizeX - filter + 2 * padding) / stride) + 1;
-    int convY = ((sizeY - filter + 2 * padding) / stride) + 1;
-
-    std::vector<std::vector<int>> output(convX, std::vector<int>(convY, 0)); 
-
-    for(int x = 0; x != convX; ++x) {
-       for(int y = 0; y != convY; ++y) {
-            int sumKernel = 0;
-            int itreationKernel = 0;
-            //std::cout << "-------------------------------------------" << std::endl;
-            //std::cout << "x: " << x << " y: " << y << std::endl;
-            for(int yKernel = 0; yKernel != kernel.size(); ++yKernel ) {
-                for(int xKernel = 0; xKernel != kernel[0].size(); ++xKernel ) {
-                    //std::cout << "-------------------------------------------" << std::endl;
-                    //std::cout << "x+xKernel: " << x+xKernel+stride << std::endl;
-                    //std::cout << "y+yKernel: " << y+yKernel+stride << std::endl;
-                    //std::cout << "image[0][x+xKernel][y+yKernel]: " << (int)image[0][x+xKernel][y+yKernel] << std::endl;
-                    //std::cout << "kernel[xKernel][yKernel]: " << kernel[xKernel][yKernel] << std::endl;
-                    sumKernel += image[0][x+xKernel+stride][y+yKernel+stride] * kernel[xKernel][yKernel];
-                    //std::cout << "sumKernel: " << sumKernel << std::endl;
-                    itreationKernel++;
-
-                } 
+    for (int i = 0; i < poolMax[0].size(); ++i)              // rows
+    {
+        for (int j = 0; j < poolMax.size(); ++j)          // columns
+        {
+            if (poolMax[i][j] > maxNumber) {
+                maxNumber = poolMax[i][j];
             }
-
-            if (sumKernel > maxNumber) {
-                maxNumber = sumKernel;
-            }
-            if (sumKernel < minNumber) {
-                minNumber = sumKernel;
-            }
-            output[x][y] = sumKernel;
-            //std::cout << "output[x][y]: " << output[x][y] << std::endl;
-            //std::cout << "itreationKernelRed: " << itreationKernel << std::endl;
-
         }
-
-
     }
-    std::cout << "maxNumber: " << maxNumber << std::endl;
-    std::cout << "minNumber: " << minNumber << std::endl;
-    NormalizeImage(output, minNumber, maxNumber);
-    /*
-    std::cout << "-------------------------------------------" << std::endl;
-    std::cout << "convX: " << convX << std::endl;
-    std::cout << "convY: " << convY << std::endl;
-    std::cout << "output.size(): " << output.size() << std::endl;
-    std::cout << "output[0].size(): " << output[0].size() << std::endl; 
-    */
-    return output; 
+    return maxNumber;
 }
-std::vector<std::vector<int>> ConvolutionGreen(std::vector<std::vector<std::vector<unsigned char>>> image){
-    //For normalization
-    int minNumber = 0;
-    int maxNumber = 0;
-
-    int redSize = image[0].size();
-    int greenSize = image[1].size();
-    int blueSize = image[2].size();
-    int padding = 0;
-    int stride = 2;
-    int filter = 5;
-    int sizeX = image[0].size(); 
-    int sizeY = image[0][0].size();
-    //std::cout << "sizeX: " << sizeX << std::endl;
-    //std::cout << "sizeY: " << sizeY << std::endl;
-    std::vector<std::vector<int>> kernel{ 
-        { 0, 0, 3, 0, 0 }, 
-        { 0, 0, 3, 0, 0 }, 
-        { 2, 3, 4, 2, 1 },
-        { 0, 0, 3, 0, 0 }, 
-        { 0, 0, 3, 0, 0 }, 
-    };
-    int convX = ((sizeX - filter + 2 * padding) / stride) + 1;
-    int convY = ((sizeY - filter + 2 * padding) / stride) + 1;
-
-    std::vector<std::vector<int>> output(convX, std::vector<int>(convY, 0)); 
-
-    for(int x = 0; x != convX; ++x) {
-       for(int y = 0; y != convY; ++y) {
-            int sumKernel = 0;
-            int itreationKernel = 0;
-            //std::cout << "-------------------------------------------" << std::endl;
-            //std::cout << "x: " << x << " y: " << y << std::endl;
-            for(int yKernel = 0; yKernel != kernel.size(); ++yKernel ) {
-                for(int xKernel = 0; xKernel != kernel[0].size(); ++xKernel ) {
-                    //std::cout << "-------------------------------------------" << std::endl;
-                    //std::cout << "x+xKernel: " << x+xKernel+stride << std::endl;
-                    //std::cout << "y+yKernel: " << y+yKernel+stride << std::endl;
-                    //std::cout << "image[0][x+xKernel][y+yKernel]: " << (int)image[0][x+xKernel][y+yKernel] << std::endl;
-                    //std::cout << "kernel[xKernel][yKernel]: " << kernel[xKernel][yKernel] << std::endl;
-                    sumKernel += image[1][x+xKernel+stride][y+yKernel+stride] * kernel[xKernel][yKernel];
-                    //std::cout << "sumKernel: " << sumKernel << std::endl;
-                    itreationKernel++;
-
-                } 
+std::vector<int> FindMaxIndex(std::vector<std::vector<int>> poolMax){
+    int maxNumber = INT_MIN;
+    int iOffset;
+    int jOffset;
+    std::vector<int> maxData;
+    for (int i = 0; i < poolMax[0].size(); ++i)              // rows
+    {
+        for (int j = 0; j < poolMax.size(); ++j)          // columns
+        {
+            if (poolMax[i][j] > maxNumber) {
+                maxNumber = poolMax[i][j];
+                iOffset = i;
+                jOffset = j;
             }
-            output[x][y] = sumKernel;
-            //std::cout << "output[x][y]: " << output[x][y] << std::endl;
-            //std::cout << "itreationKernelGreen: " << itreationKernel << std::endl;
-
-        } 
-    }/*
-    std::cout << "-------------------------------------------" << std::endl;
-    std::cout << "convX: " << convX << std::endl;
-    std::cout << "convY: " << convY << std::endl;
-    std::cout << "output.size(): " << output.size() << std::endl;
-    std::cout << "output[0].size(): " << output[0].size() << std::endl; 
-    */
-    return output; 
-}
-std::vector<std::vector<int>> ConvolutionBlue(std::vector<std::vector<std::vector<unsigned char>>> image){
-    //For normalization
-    int minNumber = 0;
-    int maxNumber = 0;
-
-    int redSize = image[0].size();
-    int greenSize = image[1].size();
-    int blueSize = image[2].size();
-    int padding = 0;
-    int stride = 2;
-    int filter = 5;
-    int sizeX = image[0].size(); 
-    int sizeY = image[0][0].size();
-    //std::cout << "sizeX: " << sizeX << std::endl;
-    //std::cout << "sizeY: " << sizeY << std::endl;
-    std::vector<std::vector<int>> kernel{ 
-        { 0, 0, 3, 0, 0 }, 
-        { 0, 0, 3, 0, 0 }, 
-        { 2, 3, 4, 2, 1 },
-        { 0, 0, 3, 0, 0 }, 
-        { 0, 0, 3, 0, 0 }, 
-    };
-    int convX = ((sizeX - filter + 2 * padding) / stride) + 1;
-    int convY = ((sizeY - filter + 2 * padding) / stride) + 1;
-
-    std::vector<std::vector<int>> output(convX, std::vector<int>(convY, 0)); 
-
-    for(int x = 0; x != convX; ++x) {
-       for(int y = 0; y != convY; ++y) {
-            int sumKernel = 0;
-            int itreationKernel = 0;
-            //std::cout << "-------------------------------------------" << std::endl;
-            //std::cout << "x: " << x << " y: " << y << std::endl;
-            for(int yKernel = 0; yKernel != kernel.size(); ++yKernel ) {
-                for(int xKernel = 0; xKernel != kernel[0].size(); ++xKernel ) {
-                    std::cout << "-------------------------------------------" << std::endl;
-                    //std::cout << "x+xKernel: " << x+xKernel+stride << std::endl;
-                    //std::cout << "y+yKernel: " << y+yKernel+stride << std::endl;
-                    //std::cout << "image[0][x+xKernel][y+yKernel]: " << (int)image[0][x+xKernel][y+yKernel] << std::endl;
-                    //std::cout << "kernel[xKernel][yKernel]: " << kernel[xKernel][yKernel] << std::endl;
-                    sumKernel += image[2][x+xKernel+stride][y+yKernel+stride] * kernel[xKernel][yKernel];
-                    //std::cout << "sumKernel: " << sumKernel << std::endl;
-                    itreationKernel++;
-
-                } 
-            }
-            output[x][y] = sumKernel;
-            
-            //std::cout << "output[x][y]: " << output[x][y] << std::endl;
-            //std::cout << "itreationKernelBlue: " << itreationKernel << std::endl;
-        
-        } 
+        }
     }
-    /*
-    std::cout << "-------------------------------------------" << std::endl;
-    std::cout << "convX: " << convX << std::endl;
-    std::cout << "convY: " << convY << std::endl;
-    std::cout << "output.size(): " << output.size() << std::endl;
-    std::cout << "output[0].size(): " << output[0].size() << std::endl; 
-    */
-    return output; 
+    //offset from  
+    maxData.push_back(iOffset); 
+    maxData.push_back(jOffset); 
+    return maxData;
+}
+int FindAverageElem(std::vector<std::vector<int>> poolAvg){
+    int AvgNumber = INT_MIN;
+    int totalNum = poolAvg[0].size() * poolAvg.size();
+    int sum = 0;
+    for (int i = 0; i < poolAvg[0].size(); ++i)              // rows
+    {
+        for (int j = 0; j < poolAvg.size(); ++j)          // columns
+        {
+               sum += poolAvg[i][j];
+        }
+    }
+    return round(sum / totalNum);
 }
