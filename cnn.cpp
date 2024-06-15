@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include "functions.cpp"
+#include <bits/stdc++.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -18,14 +19,116 @@ class ConvolutionalNeuralNetwork {
         int sizeInputX; // for backpropogation
         int sizeInputY; // for backpropogation
         std::vector<std::vector<int>> convBeforePooling;
-        std::vector<std::vector<std::vector<float>>> kernelsW1;
-        std::vector<std::vector<std::vector<float>>> kernelsW2;
+
+        std::vector<std::vector<std::vector<float>>> kernelsW1Red;
+        std::vector<std::vector<std::vector<float>>> kernelsW1Green;
+        std::vector<std::vector<std::vector<float>>> kernelsW1Blue;
+        
+        int numKernelsW1;
+        int sizeKernelW1;
+
+        std::vector<std::vector<std::vector<float>>> kernelsW2Red;
+        std::vector<std::vector<std::vector<float>>> kernelsW2Green;
+        std::vector<std::vector<std::vector<float>>> kernelsW2Blue;
+        
+        int numKernelsW2;
+        int sizeKernelW2;
         std::vector<std::vector<std::vector<float>>> kernelsW3;
-        int DenseLayerSize;
         std::vector<float> inputDesnse;
+        int DenseLayerSize;
+        int weightsHiddenOneSize;
+        int weightsHiddenTwoSize;
+        int weightsOutputSize;
+
+        std::vector<std::vector<float>> weightsInput;
+        std::vector<std::vector<float>> weightsHiddenOne;
+        std::vector<std::vector<float>> weightsHiddenTwo;
+        std::vector<std::vector<float>> weightsOutput;
+
     public:
     ConvolutionalNeuralNetwork() {
+        weightsHiddenOneSize = 300;
+        weightsHiddenTwoSize = 30;
+        weightsOutputSize = 2;
 
+        numKernelsW1 = 1;
+        sizeKernelW1 = 4;
+        
+        numKernelsW2 = 1;
+        sizeKernelW2 = 4;
+    
+        for (int i=0; i<numKernelsW1; i++) {
+            std::vector<std::vector<float>> kernRed; 
+            std::vector<std::vector<float>> kernGreen;
+            std::vector<std::vector<float>> kernBlue;
+            for (int j=0; j<sizeKernelW1; j++) {
+                std::vector<float> rowRed;
+                std::vector<float> rowGreen;
+                std::vector<float> rowBlue; 
+                for (int k=0; k<sizeKernelW1; k++) {
+                    
+                    float red = (float)((double)rand()) / RAND_MAX;
+                    float green = (float)((double)rand()) / RAND_MAX;
+                    float blue = (float)((double)rand()) / RAND_MAX;
+                    rowRed.push_back(red);
+                    rowGreen.push_back(green);
+                    rowBlue.push_back(blue);                    
+                }
+                kernRed.push_back(rowRed);
+                kernGreen.push_back(rowGreen);
+                kernBlue.push_back(rowBlue);
+                rowRed.clear();
+                rowGreen.clear();
+                rowBlue.clear();
+            }
+            kernelsW1Red.push_back(kernRed);
+            kernelsW1Green.push_back(kernGreen);
+            kernelsW1Blue.push_back(kernBlue);
+        }
+
+
+
+        for (int i=0; i<numKernelsW2; i++) {
+            std::vector<std::vector<float>> kernRed; 
+            std::vector<std::vector<float>> kernGreen;
+            std::vector<std::vector<float>> kernBlue;
+            for (int j=0; j<sizeKernelW2; j++) {
+                std::vector<float> rowRed;
+                std::vector<float> rowGreen;
+                std::vector<float> rowBlue; 
+                for (int k=0; k<sizeKernelW2; k++) {
+                    float red = (float)((double)rand()) / RAND_MAX;
+                    float green = (float)((double)rand()) / RAND_MAX;
+                    float blue = (float)((double)rand()) / RAND_MAX;
+                    rowRed.push_back(red);
+                    rowGreen.push_back(green);
+                    rowBlue.push_back(blue);
+                }
+                kernRed.push_back(rowRed);
+                kernGreen.push_back(rowGreen);
+                kernBlue.push_back(rowBlue);
+                rowRed.clear();
+                rowGreen.clear();
+                rowBlue.clear();
+            }
+            kernelsW2Red.push_back(kernRed);
+            kernelsW2Green.push_back(kernGreen);
+            kernelsW2Blue.push_back(kernBlue);
+        }
+        /*
+        std::cout << "kernelsW1Red: " << kernelsW1Red.size() << std::endl;
+        std::cout << "kernelsW1Red[]: " << kernelsW1Red[0].size() << std::endl; 
+        std::cout << "kernelsW1Red[]: " << kernelsW1Red[0][0].size() << std::endl; 
+        
+        std::cout << "kernelsW1Green: " << kernelsW1Green.size() << std::endl;
+        std::cout << "kernelsW1Green[]: " << kernelsW1Green[0].size() << std::endl; 
+        std::cout << "kernelsW1Green[][]: " << kernelsW1Green[0][0].size() << std::endl;
+        
+        std::cout << "kernelsW1Blue: " << kernelsW1Green.size() << std::endl;
+        std::cout << "kernelsW1Blue[]: " << kernelsW1Green[0].size() << std::endl; 
+        std::cout << "kernelsW1Blue[]: " << kernelsW1Green[0][0].size() << std::endl;
+        */
+        /*
         kernelsW1 = {
         { //Red
             {0, -1, 0, 0.1, 0.1}, 
@@ -91,24 +194,35 @@ class ConvolutionalNeuralNetwork {
             {1.0, 1.0, 1.0, 1.0},
             {1.0, 1.0, 1.0, 1.0},  
         },};
+        */
 
-        std::vector<std::vector<int>> convImageRed = convolve2DSlow(loadImage("datasetpreprocessing/test/cats/cat.1.png"), 0, kernelsW1[0]);
-        std::vector<std::vector<int>> convImageGreen = convolve2DSlow(loadImage("datasetpreprocessing/test/cats/cat.1.png"), 1, kernelsW1[1]);
-        std::vector<std::vector<int>> convImageBlue = convolve2DSlow(loadImage("datasetpreprocessing/test/cats/cat.1.png"), 2, kernelsW1[2]);
+        std::vector<std::vector<int>> convImageRed = convolve2DSlow(loadImage("datasetpreprocessing/test/cats/cat.1.png"), 0, kernelsW1Red[0]);
+        std::vector<std::vector<int>> convImageGreen = convolve2DSlow(loadImage("datasetpreprocessing/test/cats/cat.1.png"), 1, kernelsW1Green[0]);
+        std::vector<std::vector<int>> convImageBlue = convolve2DSlow(loadImage("datasetpreprocessing/test/cats/cat.1.png"), 2, kernelsW1Blue[0]);
+               
         
+        std::cout << "firts conv size: " << convImageRed.size() << " " << convImageRed[0].size() << std::endl; 
+        std::cout << "max pool 4x4" << std::endl; 
         std::vector<std::vector<int>> MaxPoolRed = MaxPool(convImageRed);
         std::vector<std::vector<int>> MaxPoolGreen = MaxPool(convImageGreen); 
         std::vector<std::vector<int>> MaxPoolBlue = MaxPool(convImageBlue);
 
-        std::vector<std::vector<int>> convImageRedTwo = convolve2DSlow(MaxPoolRed, kernelsW2[0]);
-        std::vector<std::vector<int>> convImageGreenTwo = convolve2DSlow(MaxPoolGreen, kernelsW2[1]);
-        std::vector<std::vector<int>> convImageBlueTwo = convolve2DSlow(MaxPoolGreen, kernelsW2[2]);
+        std::cout << "MaxPool size: " << MaxPoolRed.size() << " " << MaxPoolRed[0].size() << std::endl; 
+        std::cout << "max pool 4x4" << std::endl; 
+
+        std::vector<std::vector<int>> convImageRedTwo = convolve2DSlow(MaxPoolRed, kernelsW2Red[0]);
+        std::vector<std::vector<int>> convImageGreenTwo = convolve2DSlow(MaxPoolGreen, kernelsW2Green[0]);
+        std::vector<std::vector<int>> convImageBlueTwo = convolve2DSlow(MaxPoolGreen, kernelsW2Blue[0]);
+        
+        std::cout << "two conv size: " << convImageRedTwo.size() << " " << convImageRedTwo[0].size() << std::endl; 
+        std::cout << "max pool 4x4" << std::endl; 
 
         std::vector<std::vector<int>> MaxPoolRedTwo = MaxPool(convImageRedTwo);
         std::vector<std::vector<int>> MaxPoolGreenTwo = MaxPool(convImageGreenTwo); 
         std::vector<std::vector<int>> MaxPoolBlueTwo = MaxPool(convImageBlueTwo);
         
-
+        std::cout << "MaxPool size: " << MaxPoolRedTwo.size() << " " << MaxPoolRedTwo[0].size() << std::endl; 
+        std::cout << "dense" << std::endl; 
         //std::vector<std::vector<int>> convImageRedThree = convolve2DSlow(MaxPoolRedTwo, kernelsW3[0]);
         //std::vector<std::vector<int>> convImageGreenThree = convolve2DSlow(MaxPoolGreenTwo, kernelsW3[1]);
         //std::vector<std::vector<int>> convImageBlueThree = convolve2DSlow(MaxPoolBlueTwo, kernelsW3[2]);        
@@ -149,8 +263,40 @@ class ConvolutionalNeuralNetwork {
 
           
         for (int j=0; j<inputDesnse.size(); j++) {
-            std::cout << "num: " << j << " inputDesnse: " << NormalizeImage(inputDesnse[j], 1.0f, (float)minInputDense, (float)maxInputDense) << std::endl;
+            //std::cout << "num: " << j << " inputDesnse: " << NormalizeImage(inputDesnse[j], 1.0f, (float)minInputDense, (float)maxInputDense) << std::endl;
+            inputDesnse[j] = NormalizeImage(inputDesnse[j], 1.0f, (float)minInputDense, (float)maxInputDense); 
         }
+
+        // init input-hidden layer
+        weightsInput.resize(inputDesnse.size());
+        for (int i=0; i<inputDesnse.size(); i++) {
+            weightsInput[i].resize(weightsHiddenOneSize); 
+            for (int j=0; j<weightsHiddenOneSize; j++) {
+                weightsInput[i][j] = (float)((double)rand()) / RAND_MAX; 
+                //std::cout << "row: " << i << " columm: " << j << " weightsInput[i][j]: " << weightsInput[i][j] << std::endl;
+            } 
+        } 
+
+        // init hidden1-hidden2 layer
+        weightsHiddenOne.resize(weightsHiddenOneSize);
+        for (int i=0; i<weightsHiddenOneSize; i++) {
+            weightsHiddenOne[i].resize(weightsHiddenTwoSize); 
+            for (int j=0; j<weightsOutputSize; j++) {
+                weightsHiddenOne[i][j] = (float)((double)rand()) / RAND_MAX; 
+                //std::cout << "row: " << i << " columm: " << j << " weightsInput[i][j]: " << weightsInput[i][j] << std::endl;
+            } 
+        } 
+
+        // init hidden2-output layer
+        weightsInput.resize(weightsHiddenTwoSize);
+        for (int i=0; i<inputDesnse.size(); i++) {
+            weightsInput[i].resize(weightsHiddenOneSize); 
+            for (int j=0; j<weightsHiddenOneSize; j++) {
+                weightsInput[i][j] = (float)((double)rand()) / RAND_MAX; 
+                //std::cout << "row: " << i << " columm: " << j << " weightsInput[i][j]: " << weightsInput[i][j] << std::endl;
+            } 
+        } 
+
         std::cout << "----------------------------------" << std::endl;
         std::cout << "inputDesnse min: " << minInputDense << std::endl;
         std::cout << "inputDesnse max: " << maxInputDense << std::endl;
@@ -225,6 +371,9 @@ class ConvolutionalNeuralNetwork {
         for (const auto & entry : std::filesystem::directory_iterator(path))
             std::cout << entry.path() << std::endl;
     }
+    void feedforward(){
+        
+    }
     std::vector<std::vector<int>> convolve2D(std::vector<std::vector<std::vector<unsigned char>>> image, int channel, std::vector<std::vector<float>> kernelConv) {
         //For normalization
         float minNumber = INT_MAX;
@@ -238,9 +387,9 @@ class ConvolutionalNeuralNetwork {
 
         int sizeW = image[0].size(); 
         int sizeH = image[0][0].size();
-        //std::cout << "sizeW: " << sizeW << std::endl;
-        //std::cout << "sizeH: " << sizeH << std::endl;
-        int convW = ((sizeW - kernelConv[0].size() + 2 * padding) / stride) + 1;
+        std::cout << "sizeW: " << sizeW << std::endl;
+        std::cout << "sizeH: " << sizeH << std::endl;
+        int convW = ((sizeW - kernelConv.size() + 2 * padding) / stride) + 1;
         int convH = ((sizeH - kernelConv.size() + 2 * padding) / stride) + 1;
         std::vector<std::vector<int>> output(convW, std::vector<int>(convH, 0));
         //std::cout << "convW: " << convW << std::endl;
@@ -284,13 +433,17 @@ class ConvolutionalNeuralNetwork {
 
         int sizeW = image[0].size(); 
         int sizeH = image[0][0].size();
-        //std::cout << "sizeW: " << sizeW << std::endl;
-        //std::cout << "sizeH: " << sizeH << std::endl;
+        std::cout << "sizeW: " << sizeW << std::endl;
+        std::cout << "sizeH: " << sizeH << std::endl;
+        std::cout << "kernelConv[0].size(): " << kernelConv[0].size() << std::endl;
+        std::cout << "kernelConv.size(): " << kernelConv.size() << std::endl;
         int convW = ((sizeW - kernelConv[0].size() + 2 * padding) / stride) + 1;
         int convH = ((sizeH - kernelConv.size() + 2 * padding) / stride) + 1;
+
         std::vector<std::vector<int>> output(convW, std::vector<int>(convH, 0));
-        //std::cout << "convW: " << convW << std::endl;
-        //std::cout << "convH: " << convH << std::endl;
+        std::cout << "convW: " << convW << std::endl;
+        std::cout << "convH: " << convH << std::endl;    
+        
         
         int kCenterX = kernelConv.size() / 2;
         int kCenterY = kernelConv.size() / 2;
@@ -306,12 +459,14 @@ class ConvolutionalNeuralNetwork {
                         // index of input signal, used for checking boundary
                         int hh = h + (kCenterY - mm);
                         int ww = w + (kCenterX - nn);
+
                         if (ww-1 >= 0 && ww < convW && hh-1 >= 0 && hh < convH){
                             output[h][w] += image[channel][hh][ww] * kernelConv[mm][nn];
                         }
                     }
                 }
                 //output[w][h] = sum;
+
                 if (output[w][h] > maxNumber) {
                     maxNumber = output[w][h];
                 }
@@ -373,14 +528,14 @@ class ConvolutionalNeuralNetwork {
         }
         return NormalizeImage(output, minNumber, maxNumber); //output; 
     }
-    std::vector<std::vector<int>> AveragePool(std::vector<std::vector<int>> image){
+    /*std::vector<std::vector<int>> AveragePool(std::vector<std::vector<int>> image, std::vector<std::vector<float>> kernelConvPerv){
         int padding = 0;
         int stride = 2;
         int filter = 2;
         int sizeX = image.size(); 
         int sizeY = image[0].size();
-        int sizePoolX = ((sizeX - kernelsW1[0][0].size() + 2 * padding) / stride) + 1;
-        int sizePoolY = ((sizeY - kernelsW1[0][0].size() + 2 * padding) / stride) + 1;
+        int sizePoolX = ((sizeX - kernelConvPerv[0][0].size() + 2 * padding) / stride) + 1;
+        int sizePoolY = ((sizeY - kernelConvPerv[0][0].size() + 2 * padding) / stride) + 1;
         std::vector<std::vector<int>> output(sizePoolX, std::vector<int>(sizePoolY, 0));
         //std::cout << "sizePoolX: " << sizePoolX << std::endl;
         //std::cout << "sizePoolY: " << sizePoolY << std::endl;
@@ -405,7 +560,7 @@ class ConvolutionalNeuralNetwork {
             }
         }
         return output;
-    }
+    }*/
     std::vector<std::vector<int>> MaxPool(std::vector<std::vector<int>> image){
         int padding = 0;
         int stride = 2;
@@ -465,5 +620,6 @@ class ConvolutionalNeuralNetwork {
 };
 
 int main() {
+   srand(time(0));
    ConvolutionalNeuralNetwork cnn;
 }
