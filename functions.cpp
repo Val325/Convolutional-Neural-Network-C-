@@ -2,26 +2,62 @@
 #include <vector>
 #include <math.h> 
 #include <limits.h>
-/*
-void multiplyMatrix(int mat1[][C1], int mat2[][C2])
+
+
+
+std::vector<std::vector<float>> multiplyMatrix(std::vector<float> input, std::vector<std::vector<float>> mat2)
 {
-    int sizeRow;
-    int sizeColumn;
-    int rslt[R1][C2];
-    
+    int sizeRowFirst = input.size();
+    int sizeColumn = 1;
+    int sizeRowTwo = mat2[0].size();
+    std::vector<std::vector<float>> output(sizeRowFirst, std::vector<float>(sizeColumn, 0));
+ 
 
-    for (int i = 0; i < R1; i++) {
-        for (int j = 0; j < C2; j++) {
-            rslt[i][j] = 0;
-
-            for (int k = 0; k < R2; k++) {
-                rslt[i][j] += mat1[i][k] * mat2[k][j];
+    for (int i = 0; i < sizeRowFirst; i++) {
+        for (int j = 0; j < sizeColumn; j++) {
+            
+            for (int k = 0; k < sizeRowTwo; k++) {
+               output[i][j] += input[i] * mat2[k][j]; 
             }
         }
 
     }
+    return output; 
 }
-*/
+
+std::vector<std::vector<float>> multiplyMatrix(std::vector<std::vector<float>> mat1, std::vector<std::vector<float>> mat2)
+{
+    int sizeRowFirst = mat1[0].size();
+    int sizeColumn = mat2.size();
+    int sizeRowTwo = mat2[0].size();
+    std::vector<std::vector<float>> output(sizeRowFirst, std::vector<float>(sizeColumn, 0));
+ 
+
+    for (int i = 0; i < sizeRowFirst; i++) {
+        for (int j = 0; j < sizeColumn; j++) {
+            
+            for (int k = 0; k < sizeRowTwo; k++) {
+               output[i][j] += mat1[i][k] * mat2[k][j]; 
+            }
+        }
+
+    }
+    return output; 
+}
+
+std::vector<std::vector<float>> transposeMatrix(std::vector<std::vector<float>> matrix)
+{
+    int sizeRow = matrix[0].size();
+    int sizeColumn = matrix.size();
+    
+    std::vector<std::vector<float>> output(sizeRow, std::vector<float>(sizeColumn, 0));
+    for (int i = 0; i < sizeRow; i++) 
+        for (int j = 0; j < sizeColumn; j++) 
+            output[i][j] = matrix[j][i];  
+
+    return output; 
+}
+
 void Nothing(){
     std::cout << "nothing" << std::endl;
 }
@@ -50,6 +86,26 @@ float sigmoid(const float& data) {
     
     return output;
 }
+
+std::vector<float> dotNN(std::vector<float> input, std::vector<std::vector<float>> weights, std::vector<float> bias)
+{
+
+    std::vector<float> output;
+ 
+
+    for (int i = 0; i < weights[0].size(); i++) {
+        float neuron = 0;
+        for (int j = 0; j < weights.size(); j++) {
+            for (int k = 0; k < weights[0].size(); k++) {
+                neuron += input[i] * weights[i][j] + bias[i];
+            }
+        }
+        output.push_back(sigmoid(neuron));
+    }
+    return output; 
+}
+
+
 
 std::vector<float> derivativeSigmoid(const std::vector<float>& data) {
     /*  
@@ -166,6 +222,25 @@ std::vector<std::vector<float>> softmaxDerivative(const std::vector<float>& data
     }
     
     return softmaxJacobian;
+}
+
+std::vector<float> dotNNSoftmax(std::vector<float> input, std::vector<std::vector<float>> weights)
+{
+
+    std::vector<float> output;
+    std::cout << "weights[0].size()" << weights[0].size() << std::endl; 
+    std::cout << "weights.size()" << weights.size() << std::endl; 
+
+    for (int i = 0; i < weights[0].size(); i++) {
+        float neuron = 0;
+        for (int j = 0; j < weights.size(); j++) {
+            for (int k = 0; k < weights[0].size(); k++) {
+                neuron += input[i] * weights[i][j];
+            }
+        }
+        output.push_back(neuron);
+    }
+    return softmax(output); 
 }
 
 std::vector<std::vector<int>> NormalizeImage(std::vector<std::vector<int>> image, int min, int max){
