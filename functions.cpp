@@ -2,9 +2,26 @@
 #include <vector>
 #include <math.h> 
 #include <limits.h>
+#include <cmath>
 
-
-
+float MSEloss(std::vector<float> X, int Y){
+    int sizeOutput = X.size();
+    float sum = 0;
+    for (int i = 0; i < sizeOutput; i++) {
+        sum += std::pow(((float)Y - X[i]), 2);
+    }
+    sum = sum / sizeOutput;
+    return sum;
+}
+std::vector<float> MSElossDerivative(std::vector<float> X, int Y){
+    int sizeOutput = X.size();
+    std::vector<float> output;
+    for (int i = 0; i < sizeOutput; i++) {
+       float deriv = 2*((float)Y - X[i])/sizeOutput;
+       output.push_back(deriv);
+    }
+    return output;
+}
 std::vector<std::vector<float>> multiplyMatrix(std::vector<float> input, std::vector<std::vector<float>> mat2)
 {
     int sizeRowFirst = input.size();

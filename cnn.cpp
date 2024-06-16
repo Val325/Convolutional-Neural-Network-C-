@@ -15,7 +15,9 @@
 //using namespace OIIO;
 class ConvolutionalNeuralNetwork {       
     private:
-        std::string filename;    
+        std::string filename;   
+        std::vector<std::pair<std::vector<std::vector<std::vector<unsigned char>>>, int>> dataset; 
+
         int sizeInputX; // for backpropogation
         int sizeInputY; // for backpropogation
         std::vector<std::vector<int>> convBeforePooling;
@@ -47,6 +49,12 @@ class ConvolutionalNeuralNetwork {
         std::vector<float> biasHiddenTwo;
         std::vector<std::vector<float>> weightsOutput;
 
+        std::vector<std::pair<int, int>> firstMaxPoolBackpropIndex;
+        int SizeXfirstMaxPool;
+        int SizeYfirstMaxPool;
+        std::vector<std::pair<int, int>> TwoMaxPoolBackpropIndex;
+        int SizeXtwoMaxPool;
+        int SizeYtwoMaxPool;
     public:
     ConvolutionalNeuralNetwork() {
         weightsHiddenOneSize = 300;
@@ -127,7 +135,9 @@ class ConvolutionalNeuralNetwork {
         std::vector<std::vector<int>> convImageBlue = convolve2DSlow(loadImage("datasetpreprocessing/test/cats/cat.1.png"), 2, kernelsW1Blue[0]);
                
         
-        std::cout << "firts conv size: " << convImageRed.size() << " " << convImageRed[0].size() << std::endl; 
+        std::cout << "firts conv size: " << convImageRed.size() << " " << convImageRed[0].size() << std::endl;
+        SizeXfirstMaxPool = convImageRed.size();
+        SizeYfirstMaxPool = convImageRed[0].size(); 
         std::cout << "max pool 4x4" << std::endl; 
         std::vector<std::vector<int>> MaxPoolRed = MaxPool(convImageRed);
         std::vector<std::vector<int>> MaxPoolGreen = MaxPool(convImageGreen); 
@@ -138,11 +148,12 @@ class ConvolutionalNeuralNetwork {
 
         std::vector<std::vector<int>> convImageRedTwo = convolve2DSlow(MaxPoolRed, kernelsW2Red[0]);
         std::vector<std::vector<int>> convImageGreenTwo = convolve2DSlow(MaxPoolGreen, kernelsW2Green[0]);
-        std::vector<std::vector<int>> convImageBlueTwo = convolve2DSlow(MaxPoolGreen, kernelsW2Blue[0]);
-        
+        std::vector<std::vector<int>> convImageBlueTwo = convolve2DSlow(MaxPoolGreen, kernelsW2Blue[0]); 
         std::cout << "two conv size: " << convImageRedTwo.size() << " " << convImageRedTwo[0].size() << std::endl; 
         std::cout << "max pool 4x4" << std::endl; 
 
+        SizeXtwoMaxPool = convImageRedTwo.size();
+        SizeYtwoMaxPool = convImageRedTwo[0].size(); 
         std::vector<std::vector<int>> MaxPoolRedTwo = MaxPool(convImageRedTwo);
         std::vector<std::vector<int>> MaxPoolGreenTwo = MaxPool(convImageGreenTwo); 
         std::vector<std::vector<int>> MaxPoolBlueTwo = MaxPool(convImageBlueTwo);
@@ -240,7 +251,10 @@ class ConvolutionalNeuralNetwork {
         std::cout << "Cat: " << OutputProb[0] << std::endl;
         std::cout << "Dog: " << OutputProb[1] << std::endl;
 
-
+        std::cout << "loss: " << MSEloss(OutputProb, 1) << std::endl;
+        std::cout << "loss derivative 1: " << MSElossDerivative(OutputProb, 1)[0] << std::endl;
+        std::cout << "loss derivative 2: " << MSElossDerivative(OutputProb, 1)[1] << std::endl;
+        
         std::cout << "----------------------------------" << std::endl;
         std::cout << "inputDesnse min: " << minInputDense << std::endl;
         std::cout << "inputDesnse max: " << maxInputDense << std::endl;
@@ -310,12 +324,35 @@ class ConvolutionalNeuralNetwork {
         return Image;
     }
 
-    void getAllFiles(std::string pathfiles){
+    std::vector<std::string> getAllFiles(std::string pathfiles){
         std::string path = pathfiles;
         for (const auto & entry : std::filesystem::directory_iterator(path))
             std::cout << entry.path() << std::endl;
     }
-    void feedforward(){
+    void loadDataset(){
+        std::string pathCat = "datasetpreprocessing/train/cats";
+        std::string pathDog = "datasetpreprocessing/train/dogs";
+
+        for (const auto & entry : std::filesystem::directory_iterator(pathCat)){
+            std::pair<std::vector<std::vector<std::vector<unsigned char>>>, int> catData;
+            catData = std::make_pair(loadImage(entry.path().string()), 0);
+
+            dataset.push_back(catData);
+            std::cout << "amount dataset load: " << dataset.size() << std::endl;
+
+        }
+            //std::cout << entry.path() << std::endl;
+        for (const auto & entry : std::filesystem::directory_iterator(pathDog)){
+            std::pair<std::vector<std::vector<std::vector<unsigned char>>>, int> dogData;
+            dogData = std::make_pair(loadImage(entry.path().string()), 1);
+            dataset.push_back(dogData);
+            std::cout << "amount dataset load: " << dataset.size() << std::endl;
+
+        }
+        std::cout << "amount dataset: " << dataset.size() << std::endl;
+    }
+
+    void train(){
         
     }
     std::vector<std::vector<int>> convolve2D(std::vector<std::vector<std::vector<unsigned char>>> image, int channel, std::vector<std::vector<float>> kernelConv) {
@@ -566,4 +603,5 @@ class ConvolutionalNeuralNetwork {
 int main() {
    srand(time(0));
    ConvolutionalNeuralNetwork cnn;
+   //cnn.loadDataset();
 }
