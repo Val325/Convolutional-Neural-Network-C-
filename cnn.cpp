@@ -17,6 +17,8 @@ class ConvolutionalNeuralNetwork {
     private:
         std::string filename;   
         std::vector<std::pair<std::vector<std::vector<std::vector<unsigned char>>>, int>> dataset; 
+        
+        int amountEpoch;
 
         int sizeInputX; // for backpropogation
         int sizeInputY; // for backpropogation
@@ -49,6 +51,13 @@ class ConvolutionalNeuralNetwork {
         std::vector<float> biasHiddenTwo;
         std::vector<std::vector<float>> weightsOutput;
 
+        std::vector<std::vector<float>> GradWeightsInput;
+        std::vector<std::vector<float>> GradWeightsHiddenOne;
+        std::vector<float> GradBiasHiddenOne;
+        std::vector<std::vector<float>> GradWeightsHiddenTwo;
+        std::vector<float> GradBiasHiddenTwo;
+        std::vector<std::vector<float>> GradWeightsOutput;
+
         std::vector<std::pair<int, int>> firstMaxPoolBackpropIndex;
         int SizeXfirstMaxPool;
         int SizeYfirstMaxPool;
@@ -57,6 +66,7 @@ class ConvolutionalNeuralNetwork {
         int SizeYtwoMaxPool;
     public:
     ConvolutionalNeuralNetwork() {
+        amountEpoch = 3;
         weightsHiddenOneSize = 300;
         biasHiddenOne.resize(weightsHiddenOneSize);
         weightsHiddenTwoSize = 30;
@@ -353,7 +363,24 @@ class ConvolutionalNeuralNetwork {
     }
 
     void train(){
-        
+        std::vector<float> HiddenFirst;
+        std::vector<float> HiddenTwo;
+        std::vector<float> OutputProb;
+        for (int i=0; i<amountEpoch; i++) { 
+            HiddenFirst = dotNN(inputDesnse, weightsInput, biasHiddenOne);
+            HiddenTwo = dotNN(HiddenFirst, weightsHiddenOne, biasHiddenTwo);
+            OutputProb = dotNNSoftmax(HiddenTwo, weightsHiddenTwo);
+            
+            for (int j=0;j < weightsHiddenTwo.size();j++){
+                for (int k=0;k < weightsHiddenTwo[j].size();k++){
+
+                }
+            }
+
+            HiddenFirst.clear();
+            HiddenTwo.clear();
+            OutputProb.clear();
+        }    
     }
     std::vector<std::vector<int>> convolve2D(std::vector<std::vector<std::vector<unsigned char>>> image, int channel, std::vector<std::vector<float>> kernelConv) {
         //For normalization
