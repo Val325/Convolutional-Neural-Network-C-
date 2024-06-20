@@ -70,420 +70,6 @@ class ConvolutionalNeuralNetwork {
         int SizeXtwoMaxPool;
         int SizeYtwoMaxPool;
     public:
-    ConvolutionalNeuralNetwork() {
-        learningRate = 0.01;
-        amountEpoch = 3;
-        weightsHiddenOneSize = 300;
-        biasHiddenOne.resize(weightsHiddenOneSize);
-        weightsHiddenTwoSize = 30;
-        biasHiddenTwo.resize(weightsHiddenTwoSize);
-        std::uniform_real_distribution<double> distribution(0.0,1.0);
-        weightsOutputSize = 2;
-
-        numKernelsW1 = 1;
-        sizeKernelW1 = 4;
-        
-        numKernelsW2 = 1;
-        sizeKernelW2 = 4;
-    
-        for (int i=0; i<numKernelsW1; i++) {
-            std::vector<std::vector<double>> kernRed; 
-            std::vector<std::vector<double>> kernGreen;
-            std::vector<std::vector<double>> kernBlue;
-            for (int j=0; j<sizeKernelW1; j++) {
-                std::vector<double> rowRed;
-                std::vector<double> rowGreen;
-                std::vector<double> rowBlue; 
-                for (int k=0; k<sizeKernelW1; k++) {
-                    
-                    double red = distribution(generator);
-                    double green = distribution(generator);
-                    double blue = distribution(generator);
-                    rowRed.push_back(red);
-                    rowGreen.push_back(green);
-                    rowBlue.push_back(blue);                    
-                }
-                kernRed.push_back(rowRed);
-                kernGreen.push_back(rowGreen);
-                kernBlue.push_back(rowBlue);
-                rowRed.clear();
-                rowGreen.clear();
-                rowBlue.clear();
-            }
-            kernelsW1Red.push_back(kernRed);
-            kernelsW1Green.push_back(kernGreen);
-            kernelsW1Blue.push_back(kernBlue);
-        }
-
-
-
-        for (int i=0; i<numKernelsW2; i++) {
-            std::vector<std::vector<double>> kernRed; 
-            std::vector<std::vector<double>> kernGreen;
-            std::vector<std::vector<double>> kernBlue;
-            for (int j=0; j<sizeKernelW2; j++) {
-                std::vector<double> rowRed;
-                std::vector<double> rowGreen;
-                std::vector<double> rowBlue; 
-                for (int k=0; k<sizeKernelW2; k++) {
-                    double red = distribution(generator);
-                    double green = distribution(generator);
-                    double blue = distribution(generator);
-                    rowRed.push_back(red);
-                    rowGreen.push_back(green);
-                    rowBlue.push_back(blue);
-                }
-                kernRed.push_back(rowRed);
-                kernGreen.push_back(rowGreen);
-                kernBlue.push_back(rowBlue);
-                rowRed.clear();
-                rowGreen.clear();
-                rowBlue.clear();
-            }
-            kernelsW2Red.push_back(kernRed);
-            kernelsW2Green.push_back(kernGreen);
-            kernelsW2Blue.push_back(kernBlue);
-        }
-
-
-        std::vector<std::vector<int>> convImageRed = convolve2DSlow(loadImage("datasetpreprocessing/test/cats/cat.1.png"), 0, kernelsW1Red[0]);
-        std::vector<std::vector<int>> convImageGreen = convolve2DSlow(loadImage("datasetpreprocessing/test/cats/cat.1.png"), 1, kernelsW1Green[0]);
-        std::vector<std::vector<int>> convImageBlue = convolve2DSlow(loadImage("datasetpreprocessing/test/cats/cat.1.png"), 2, kernelsW1Blue[0]);
-               
-        
-        std::cout << "firts conv size: " << convImageRed.size() << " " << convImageRed[0].size() << std::endl;
-        SizeXfirstMaxPool = convImageRed.size();
-        SizeYfirstMaxPool = convImageRed[0].size(); 
-        std::cout << "max pool 4x4" << std::endl; 
-        std::vector<std::vector<int>> MaxPoolRed = MaxPool(convImageRed);
-        std::vector<std::vector<int>> MaxPoolGreen = MaxPool(convImageGreen); 
-        std::vector<std::vector<int>> MaxPoolBlue = MaxPool(convImageBlue);
-
-        std::cout << "MaxPool size: " << MaxPoolRed.size() << " " << MaxPoolRed[0].size() << std::endl; 
-        std::cout << "max pool 4x4" << std::endl; 
-
-        std::vector<std::vector<int>> convImageRedTwo = convolve2DSlow(MaxPoolRed, kernelsW2Red[0]);
-        std::vector<std::vector<int>> convImageGreenTwo = convolve2DSlow(MaxPoolGreen, kernelsW2Green[0]);
-        std::vector<std::vector<int>> convImageBlueTwo = convolve2DSlow(MaxPoolGreen, kernelsW2Blue[0]); 
-        std::cout << "two conv size: " << convImageRedTwo.size() << " " << convImageRedTwo[0].size() << std::endl; 
-        std::cout << "max pool 4x4" << std::endl; 
-
-        SizeXtwoMaxPool = convImageRedTwo.size();
-        SizeYtwoMaxPool = convImageRedTwo[0].size(); 
-        std::vector<std::vector<int>> MaxPoolRedTwo = MaxPool(convImageRedTwo);
-        std::vector<std::vector<int>> MaxPoolGreenTwo = MaxPool(convImageGreenTwo); 
-        std::vector<std::vector<int>> MaxPoolBlueTwo = MaxPool(convImageBlueTwo);
-        
-        std::cout << "MaxPool size: " << MaxPoolRedTwo.size() << " " << MaxPoolRedTwo[0].size() << std::endl; 
-        std::cout << "dense" << std::endl; 
-
-        const char* filename = "cat pool.1.png";
-        const int xres = MaxPoolRedTwo.size(), yres = MaxPoolRedTwo[0].size(), channels = 3;
-        std::cout << "max pool size x: " <<  MaxPoolRedTwo.size() << std::endl;
-        std::cout << "max pool size y: " <<  MaxPoolRedTwo[0].size() << std::endl;
-        DenseLayerSize = (MaxPoolRedTwo.size() * MaxPoolRedTwo[0].size()) + (MaxPoolGreenTwo.size() * MaxPoolGreenTwo[0].size()) + (MaxPoolBlueTwo.size() * MaxPoolBlueTwo[0].size()); 
-        std::cout << "total dense layer: " << DenseLayerSize << std::endl; 
-        
-        //    
-        // Normalization dense layer
-        //
-        for (int i=0; i<MaxPoolRedTwo.size(); i++) {
-            for (int j=0; j<MaxPoolRedTwo[0].size(); j++) {
-                inputDesnse.push_back(MaxPoolRedTwo[i][j]);
-            } 
-        } 
-        for (int i=0; i<MaxPoolGreenTwo.size(); i++) {
-            for (int j=0; j<MaxPoolGreenTwo[0].size(); j++) {
-                inputDesnse.push_back(MaxPoolGreenTwo[i][j]);
-            } 
-        }
-        for (int i=0; i<MaxPoolBlueTwo.size(); i++) {
-            for (int j=0; j<MaxPoolBlueTwo[0].size(); j++) {
-                inputDesnse.push_back(MaxPoolBlueTwo[i][j]);
-            } 
-        } 
-        std::cout << "inputDesnse.size(): " << inputDesnse.size() << std::endl;
-        int minInputDense = FindMin(inputDesnse);
-        int maxInputDense = FindMax(inputDesnse);
-
-          
-        for (int j=0; j<inputDesnse.size(); j++) {
-            //std::cout << "num: " << j << " inputDesnse: " << NormalizeImage(inputDesnse[j], 1.0f, (double)minInputDense, (double)maxInputDense) << std::endl;
-            std::cout << "min: " << (double)minInputDense << std::endl;
-            std::cout << "max: " << (double)maxInputDense << std::endl;
-
-            inputDesnse[j] = NormalizeImage(inputDesnse[j], 1.0d, (double)minInputDense, (double)maxInputDense); 
-        }
-
-        // init input-hidden layer
-        weightsInput.resize(inputDesnse.size());
-        for (int i=0; i<inputDesnse.size(); i++) {
-            weightsInput[i].resize(weightsHiddenOneSize); 
-            for (int j=0; j<weightsHiddenOneSize; j++) {
-                weightsInput[i][j] = distribution(generator); 
-                //std::cout << "row: " << i << " columm: " << j << " weightsInput[i][j]: " << weightsInput[i][j] << std::endl;
-            } 
-        } 
-        
-        // init hidden1-hidden2 layer
-        weightsHiddenOne.resize(weightsHiddenOneSize);
-        for (int i=0; i<weightsHiddenOneSize; i++) {
-            weightsHiddenOne[i].resize(weightsHiddenTwoSize); 
-            for (int j=0; j<weightsHiddenTwoSize; j++) {
-                weightsHiddenOne[i][j] = distribution(generator);
-                //
-            } 
-        } 
-        
-        // init hidden2-output layer
-        weightsHiddenTwo.resize(weightsHiddenTwoSize);
-        for (int i=0; i<weightsHiddenTwoSize; i++) {
-            
-            weightsHiddenTwo[i].resize(weightsOutputSize); 
-            for (int j=0; j<weightsHiddenTwo[i].size(); j++) {
-                weightsHiddenTwo[i][j] = distribution(generator);
-                //std::cout << "columm: " << j << std::endl;
-                //std::cout << "row: " << i << " columm: " << j << " weightsHiddenTwo[i][j]: " << weightsHiddenTwo[i][j] << std::endl;
-            }
-        } 
-
-        /*for (int i=0; i<biasInput.size(); i++) { 
-            biasInput[i] = (double)((double)rand()) / RAND_MAX;
-            //std::cout << "biasHiddenOne[i]: " << biasHiddenOne[i] << std::endl;
-        } */        
-
-        for (int i=0; i<biasHiddenOne.size(); i++) { 
-            biasHiddenOne[i] = distribution(generator);
-            //std::cout << "biasHiddenOne[i]: " << biasHiddenOne[i] << std::endl;
-        }         
-
-        for (int i=0; i<biasHiddenTwo.size(); i++) { 
-            biasHiddenTwo[i] = distribution(generator);
-            //std::cout << "biasHiddenTwo[i]: " << biasHiddenTwo[i] << std::endl;
-        }   
-        
-        std::vector<double> HiddenFirst = dotNN(inputDesnse, weightsInput, biasHiddenOne);
-        std::vector<double> HiddenTwo = dotNN(HiddenFirst, weightsHiddenOne, biasHiddenTwo);
-        std::vector<double> OutputProb = dotNNSoftmax(HiddenTwo, weightsHiddenTwo);
-        std::cout << "----------------------------------" << std::endl;
-        std::cout << "OutputProb.size(): " << OutputProb.size() << std::endl;
-        std::cout << "Cat: " << OutputProb[0] << std::endl;
-        std::cout << "Dog: " << OutputProb[1] << std::endl;
-
-        std::cout << "loss: " << MSEloss(OutputProb, 1) << std::endl;
-        std::cout << "loss derivative 1: " << MSElossDerivative(OutputProb, 1)[0] << std::endl;
-        std::cout << "loss derivative 2: " << MSElossDerivative(OutputProb, 1)[1] << std::endl;
-        
-        std::cout << "----------------------------------" << std::endl;
-        std::cout << "inputDesnse min: " << minInputDense << std::endl;
-        std::cout << "inputDesnse max: " << maxInputDense << std::endl;
-        int pixels[xres * yres * channels];
-        int totalPixel = 0;
-        for (int i=0; i<xres; i++) {
-            for (int j=0; j<yres; j++) {
-                
-                totalPixel++;
-                pixels[totalPixel*channels] = MaxPoolRedTwo[i][j];
-                pixels[totalPixel*channels + 1] = MaxPoolGreenTwo[i][j];
-                pixels[totalPixel*channels + 2] = MaxPoolBlueTwo[i][j]; 
-            }
-        }
-
-        std::unique_ptr<OIIO::ImageOutput> out = OIIO::ImageOutput::create(filename);
-        OIIO::ImageSpec spec(xres, yres, channels, OIIO::TypeDesc::UINT8);
-        out->open(filename, spec);
-        out->write_image(OIIO::TypeDesc::UINT8, pixels);
-        out->close(); 
-    }
-    std::vector<std::vector<std::vector<int>>> loadImage(std::string filepath){
-        filename = filepath;
-        auto inp = OIIO::ImageInput::open(filename);
-
-
-        const OIIO::ImageSpec &spec = inp->spec();
-        int xres = spec.width;
-        int yres = spec.height;
-
-        int nchannels = spec.nchannels;
-
-        auto pixels = std::unique_ptr<int[]>(new int[xres * yres * nchannels]);
-        inp->read_image(0, 0, 0, nchannels, OIIO::TypeDesc::UINT8, &pixels[0]);
-        inp->close();
-
-        std::vector<std::vector<std::vector<int>>> Image;
-
-        std::vector<int> Rarray(xres*yres);
-        std::vector<int> Garray(xres*yres);
-        std::vector<int> Barray(xres*yres);
-        
-        for (int i=0; i<xres*yres; i++) { 
-            Rarray[i] = pixels[i*nchannels];
-            Garray[i] = pixels[i*nchannels + 1];
-            Barray[i] = pixels[i*nchannels + 2];
-
-        }
-
-        std::vector<std::vector<int>> Rprocessed(xres, std::vector<int>(yres, 0));
-        std::vector<std::vector<int>> Gprocessed(xres, std::vector<int>(yres, 0));
-        std::vector<std::vector<int>> Bprocessed(xres, std::vector<int>(yres, 0));
-        
-        int pixelFlatToXY = 0; 
-        for(unsigned int x = 0; x != xres; ++x ) {
-            for(unsigned int y = 0; y != yres; ++y ) {
-                Rprocessed[x][y] = (int)Rarray[pixelFlatToXY];
-                Gprocessed[x][y] = (int)Garray[pixelFlatToXY];
-                Bprocessed[x][y] = (int)Barray[pixelFlatToXY];
-                pixelFlatToXY++;
-            } 
-        }
-
-        Image.push_back(Rprocessed);
-        Image.push_back(Gprocessed);
-        Image.push_back(Bprocessed);
-        return Image;
-    }
-
-    std::vector<std::string> getAllFiles(std::string pathfiles){
-        std::string path = pathfiles;
-        for (const auto & entry : std::filesystem::directory_iterator(path))
-            std::cout << entry.path() << std::endl;
-    }
-    void loadDataset(){
-        std::string pathCat = "datasetpreprocessing/train/cats";
-        std::string pathDog = "datasetpreprocessing/train/dogs";
-        int size = 10;
-        int iterSize = 0;
-        for (const auto & entry : std::filesystem::directory_iterator(pathCat)){
-            if (iterSize >= size) break; 
-            std::pair<std::vector<std::vector<std::vector<int>>>, int> catData;
-            catData = std::make_pair(loadImage(entry.path().string()), 0);
-
-            dataset.push_back(catData);
-            std::cout << "amount dataset load: " << dataset.size() << std::endl;
-            iterSize++;
-
-        }
-            //std::cout << entry.path() << std::endl;
-        for (const auto & entry : std::filesystem::directory_iterator(pathDog)){
-            if (iterSize >= size) break;  
-                std::pair<std::vector<std::vector<std::vector<int>>>, int> dogData;
-                dogData = std::make_pair(loadImage(entry.path().string()), 1);
-                dataset.push_back(dogData);
-                std::cout << "amount dataset load: " << dataset.size() << std::endl;
-            iterSize++;
-
-        }
-        std::cout << "amount dataset: " << dataset.size() << std::endl;
-    }
-
-    void train(){
-        int sizeDatasetLearning = 10;
-        std::vector<double> inputNN;
-        std::vector<double> HiddenFirst;
-        std::vector<double> HiddenTwo;
-        std::vector<double> OutputProb;
-      
-
-        for (int i=0; i<amountEpoch; i++) {
-            //for (int b=0; b<sizeDatasetLearning; b++){
-                std::vector<std::vector<int>> convImageRed = convolve2DSlow(dataset[0].first, 0, kernelsW1Red[0]);
-                std::vector<std::vector<int>> convImageGreen = convolve2DSlow(dataset[0].first, 1, kernelsW1Green[0]);
-                std::vector<std::vector<int>> convImageBlue = convolve2DSlow(dataset[0].first, 2, kernelsW1Blue[0]);
-                
-                SizeXfirstMaxPool = convImageRed.size();
-                SizeYfirstMaxPool = convImageRed[0].size(); 
-
-                std::vector<std::vector<int>> MaxPoolRed = MaxPool(convImageRed);
-                std::vector<std::vector<int>> MaxPoolGreen = MaxPool(convImageGreen); 
-                std::vector<std::vector<int>> MaxPoolBlue = MaxPool(convImageBlue);
-                
-                std::vector<std::vector<int>> convImageRedTwo = convolve2DSlow(MaxPoolRed, kernelsW2Red[0]);
-                std::vector<std::vector<int>> convImageGreenTwo = convolve2DSlow(MaxPoolGreen, kernelsW2Green[0]);
-                std::vector<std::vector<int>> convImageBlueTwo = convolve2DSlow(MaxPoolGreen, kernelsW2Blue[0]); 
-                
-                SizeXtwoMaxPool = convImageRedTwo.size();
-                SizeYtwoMaxPool = convImageRedTwo[0].size(); 
-                std::vector<std::vector<int>> MaxPoolRedTwo = MaxPool(convImageRedTwo);
-                std::vector<std::vector<int>> MaxPoolGreenTwo = MaxPool(convImageGreenTwo); 
-                std::vector<std::vector<int>> MaxPoolBlueTwo = MaxPool(convImageBlueTwo);
-       
-                for (int i=0; i<MaxPoolRedTwo.size(); i++) {
-                    for (int j=0; j<MaxPoolRedTwo[0].size(); j++) {
-                        inputNN.push_back(MaxPoolRedTwo[i][j]);
-                    } 
-                } 
-                for (int i=0; i<MaxPoolGreenTwo.size(); i++) {
-                    for (int j=0; j<MaxPoolGreenTwo[0].size(); j++) {
-                        inputNN.push_back(MaxPoolGreenTwo[i][j]);
-                    } 
-                }
-                for (int i=0; i<MaxPoolBlueTwo.size(); i++) {
-                    for (int j=0; j<MaxPoolBlueTwo[0].size(); j++) {
-                        inputNN.push_back(MaxPoolBlueTwo[i][j]);
-                    } 
-                } 
-        //std::cout << "inputDesnse.size(): " << inputDesnse.size() << std::endl;
-        int minInputDense = FindMin(inputNN);
-        int maxInputDense = FindMax(inputNN);
-
-          
-        for (int j=0; j<inputNN.size(); j++) {
-            //std::cout << "num: " << j << " inputDesnse: " << NormalizeImage(inputDesnse[j], 1.0d, (double)minInputDense, (double)maxInputDense) << std::endl;
-            inputNN[j] = NormalizeImage(inputNN[j], 1.0d, (double)minInputDense, (double)maxInputDense); 
-        }
-
-                HiddenFirst = dotNN(inputNN, weightsInput, biasHiddenOne);
-                /*
-                for (int j=0;j < HiddenFirst.size();j++){
-                    std::cout << "HiddenFirst: " << HiddenFirst[j] << std::endl;
-                } 
-                HiddenTwo = dotNN(HiddenFirst, weightsHiddenOne, biasHiddenTwo);
-                for (int j=0;j < HiddenTwo.size();j++){
-                    std::cout << "HiddenTwo: " << HiddenTwo[j] << std::endl;
-                } 
-                OutputProb = dotNNSoftmax(HiddenTwo, weightsHiddenTwo);
-                for (int j=0;j < OutputProb.size();j++){
-                    std::cout << "OutputProb: " << OutputProb[j] << std::endl;
-                } */
-                std::vector<double> DerivLoss = MSElossDerivative(OutputProb, 0);
-                std::vector<std::vector<double>> lossMatrix;
-                lossMatrix.push_back(MSElossDerivative(OutputProb, 0));
-                std::vector<std::vector<double>> OutputMatrixDeriv = multiplyMatrix(MSElossDerivative(OutputProb, 0), softmaxDerivative(OutputProb)); 
-
-            for (int j=0;j < weightsHiddenTwo.size();j++){
-                for (int k=0;k < weightsHiddenTwo[j].size();k++){
-                    //double num = MSElossDerivative(OutputProb, dataset[b].second)[k] * derivativeSigmoid(HiddenTwo[j]);
-                    /*std::cout << "MSEloss: " << MSElossDerivative(OutputProb, dataset[b].second)[k] << std::endl;
-                    std::cout << "derivativeSigmoid(HiddenTwo[j]): " << derivativeSigmoid(HiddenTwo[j]) << std::endl;
-                    std::cout << "DerivLoss.size(): " << DerivLoss.size() << std::endl;                    
-                    std::cout << "OutputMatrixDeriv.size(): " << OutputMatrixDeriv.size() << std::endl;
-                    std::cout << "OutputMatrixDeriv[0].size(): " << OutputMatrixDeriv[0].size() << std::endl;
-                    std::cout << "weightsHiddenTwo.size(): " << weightsHiddenTwo.size() << std::endl;
-                    std::cout << "weightsHiddenTwo[j].size(): " << weightsHiddenTwo[j].size() << std::endl;
-                    std::cout << "HiddenTwo.size(): " << HiddenTwo.size() << std::endl;
-                    */
-                    //for (int g=0;g < OutputMatrixDeriv[k].size(); g++){
-
-                    //    std::cout << "HiddenTwo[j] before: " << HiddenTwo[j] << std::endl;
-
-                   //     std::cout << "OutputMatrixDeriv[k][g] before: " << OutputMatrixDeriv[k][g] << std::endl;
-                   //     std::cout << "weightsHiddenTwo[j][k] before: " << weightsHiddenTwo[j][k] << std::endl;
-                   // weightsHiddenTwo[j][k] -= 0.1 * multiplyMatrix(MSElossDerivative(OutputProb, 0), softmaxDerivative(OutputProb))[k] * HiddenTwo[j] //* OutputMatrixDeriv[k][g] * HiddenTwo[j];
-                     //   std::cout << "weightsHiddenTwo[j][k] after: " << weightsHiddenTwo[j][k] << std::endl;
-                    }
-                }
-            }
-            std::cout << "------------------------------------------------" << std::endl;
-            std::cout << "Epoch: " << amountEpoch << std::endl;
-            std::cout << "Loss: " << MSEloss(OutputProb, 0) << std::endl;
-            inputNN.clear();
-
-            //HiddenFirst.clear();
-            //HiddenTwo.clear();
-            //OutputProb.clear();
-            //}
-        }    
-    }
     std::vector<std::vector<int>> convolve2D(std::vector<std::vector<std::vector<int>>> image, int channel, std::vector<std::vector<double>> kernelConv) {
         //For normalization
         double minNumber = INT_MAX;
@@ -497,8 +83,8 @@ class ConvolutionalNeuralNetwork {
 
         int sizeW = image[0].size(); 
         int sizeH = image[0][0].size();
-        std::cout << "sizeW: " << sizeW << std::endl;
-        std::cout << "sizeH: " << sizeH << std::endl;
+        //std::cout << "sizeW: " << sizeW << std::endl;
+        //std::cout << "sizeH: " << sizeH << std::endl;
         int convW = ((sizeW - kernelConv.size() + 2 * padding) / stride) + 1;
         int convH = ((sizeH - kernelConv.size() + 2 * padding) / stride) + 1;
         std::vector<std::vector<int>> output(convW, std::vector<int>(convH, 0));
@@ -543,16 +129,16 @@ class ConvolutionalNeuralNetwork {
 
         int sizeW = image[0].size(); 
         int sizeH = image[0][0].size();
-        std::cout << "sizeW: " << sizeW << std::endl;
-        std::cout << "sizeH: " << sizeH << std::endl;
-        std::cout << "kernelConv[0].size(): " << kernelConv[0].size() << std::endl;
-        std::cout << "kernelConv.size(): " << kernelConv.size() << std::endl;
+        //std::cout << "sizeW: " << sizeW << std::endl;
+        //std::cout << "sizeH: " << sizeH << std::endl;
+        //std::cout << "kernelConv[0].size(): " << kernelConv[0].size() << std::endl;
+        //std::cout << "kernelConv.size(): " << kernelConv.size() << std::endl;
         int convW = ((sizeW - kernelConv[0].size() + 2 * padding) / stride) + 1;
         int convH = ((sizeH - kernelConv.size() + 2 * padding) / stride) + 1;
 
         std::vector<std::vector<int>> output(convW, std::vector<int>(convH, 0));
-        std::cout << "convW: " << convW << std::endl;
-        std::cout << "convH: " << convH << std::endl;    
+        //std::cout << "convW: " << convW << std::endl;
+        //std::cout << "convH: " << convH << std::endl;    
         
         
         int kCenterX = kernelConv.size() / 2;
@@ -671,10 +257,13 @@ class ConvolutionalNeuralNetwork {
         }
         return output;
     }*/
-    std::vector<std::vector<int>> MaxPool(std::vector<std::vector<int>> image){
+    MaxPoolingData MaxPool(std::vector<std::vector<int>> image){
+        MaxPoolingData PoolingData;
         int padding = 0;
         int stride = 2;
         int filter = 2;
+        
+        MaxPoolingData dataLayer;
         int sizeX = image.size(); 
         int sizeY = image[0].size();
         int sizePoolX = ((sizeX - filter + 2 * padding) / stride) + 1;
@@ -694,7 +283,10 @@ class ConvolutionalNeuralNetwork {
                     pool[1][0] = image[i+1][j];
                     pool[1][1] = image[i+1][j+1];
 
-                    //std::vector<int> indexs = FindMaxIndex(pool);
+                    std::vector<int> indexs = FindMaxIndex(pool);
+                    std::pair<int, int> pair(indexs[0], indexs[1]);
+                    std::pair<std::pair<int, int>, int> pairOut(pair, FindMaxElem(pool)); 
+                    PoolingData.MaxPoolBackpropIndex.push_back(pairOut);
                     //std::cout << "--------------------------" << std::endl;
                     //std::cout << "i: " << indexs[0] << std::endl;
                     //std::cout << "j: " << indexs[1] << std::endl;
@@ -708,28 +300,472 @@ class ConvolutionalNeuralNetwork {
                 } 
             }
         }
-        return output;
+        /*
+struct MaxPoolingData
+{
+    std::vector<std::vector<int>> output;
+    std::vector<std::pair<int, int>> MaxPoolBackpropIndex;
+    int SizeXMaxPool;
+    int SizeYMaxPool;
+};
+         */
+        PoolingData.output = output;
+        PoolingData.SizeXMaxPool = sizeX;
+        PoolingData.SizeYMaxPool = sizeY;
+        return PoolingData;
     }
-    /*std::vector<std::vector<int>> MaxPoolBackprop(std::vector<std::vector<int>> image){
-
-        int sizeX = image.size(); 
-        int sizeY = image[0].size();
-        
-        std::vector<std::vector<int>> output(sizeInputX, std::vector<int>(sizeInputY, 0));
+    std::vector<std::vector<int>> MaxPoolBackprop(std::vector<double> data, MaxPoolingData MaxPoolDataLayer){
+        int sizeX = MaxPoolDataLayer.SizeXMaxPool; 
+        int sizeY = MaxPoolDataLayer.SizeYMaxPool;
+        /*
+struct MaxPoolingData
+{
+    std::vector<std::vector<int>> output;
+    std::vector<std::pair<std::pair<int, int>, int>> MaxPoolBackpropIndex;
+    int SizeXMaxPool;
+    int SizeYMaxPool;
+};
+         */
+        std::vector<std::vector<int>> output(sizeX, std::vector<int>(sizeY, 0));
         //std::cout << "sizePoolX: " << sizePoolX << std::endl;
         //std::cout << "sizePoolY: " << sizePoolY << std::endl;
-        for (int i = 0; i < sizeInputX; ++i)              // rows
+        for (int i = 0; i < sizeX; ++i)              // rows
         {
-            for (int j = 0; j < sizeInputY; ++j)          // columns
+            for (int j = 0; j < sizeY; ++j)          // columns
             {
- 
+                output[i][j] = 0;
+                //int indexI = MaxPoolDataLayer
+                //int indexJ = MaxPoolDataLayer
             }
         }
+    
+        for (int i = 0; i < MaxPoolDataLayer.MaxPoolBackpropIndex.size(); ++i){
+            output[MaxPoolDataLayer.MaxPoolBackpropIndex[i].first.first][MaxPoolDataLayer.MaxPoolBackpropIndex[i].first.second] = MaxPoolDataLayer.MaxPoolBackpropIndex[i].second;
+        }
         return output;
-    }*/
+    }
+    ConvolutionalNeuralNetwork() {
+        learningRate = 0.01;
+        amountEpoch = 10;
+        weightsHiddenOneSize = 30;
+        biasHiddenOne.resize(weightsHiddenOneSize);
+        weightsHiddenTwoSize = 6;
+        biasHiddenTwo.resize(weightsHiddenTwoSize);
+        std::uniform_real_distribution<double> distribution(0.0,1.0);
+        weightsOutputSize = 2;
+
+        numKernelsW1 = 1;
+        sizeKernelW1 = 4;
+        
+        numKernelsW2 = 1;
+        sizeKernelW2 = 4;
+    
+        for (int i=0; i<numKernelsW1; i++) {
+            std::vector<std::vector<double>> kernRed; 
+            std::vector<std::vector<double>> kernGreen;
+            std::vector<std::vector<double>> kernBlue;
+            for (int j=0; j<sizeKernelW1; j++) {
+                std::vector<double> rowRed;
+                std::vector<double> rowGreen;
+                std::vector<double> rowBlue; 
+                for (int k=0; k<sizeKernelW1; k++) {
+                    
+                    double red = distribution(generator);
+                    double green = distribution(generator);
+                    double blue = distribution(generator);
+                    rowRed.push_back(red);
+                    rowGreen.push_back(green);
+                    rowBlue.push_back(blue);                    
+                }
+                kernRed.push_back(rowRed);
+                kernGreen.push_back(rowGreen);
+                kernBlue.push_back(rowBlue);
+                rowRed.clear();
+                rowGreen.clear();
+                rowBlue.clear();
+            }
+            kernelsW1Red.push_back(kernRed);
+            kernelsW1Green.push_back(kernGreen);
+            kernelsW1Blue.push_back(kernBlue);
+        }
+
+
+
+        for (int i=0; i<numKernelsW2; i++) {
+            std::vector<std::vector<double>> kernRed; 
+            std::vector<std::vector<double>> kernGreen;
+            std::vector<std::vector<double>> kernBlue;
+            for (int j=0; j<sizeKernelW2; j++) {
+                std::vector<double> rowRed;
+                std::vector<double> rowGreen;
+                std::vector<double> rowBlue; 
+                for (int k=0; k<sizeKernelW2; k++) {
+                    double red = distribution(generator);
+                    double green = distribution(generator);
+                    double blue = distribution(generator);
+                    rowRed.push_back(red);
+                    rowGreen.push_back(green);
+                    rowBlue.push_back(blue);
+                }
+                kernRed.push_back(rowRed);
+                kernGreen.push_back(rowGreen);
+                kernBlue.push_back(rowBlue);
+                rowRed.clear();
+                rowGreen.clear();
+                rowBlue.clear();
+            }
+            kernelsW2Red.push_back(kernRed);
+            kernelsW2Green.push_back(kernGreen);
+            kernelsW2Blue.push_back(kernBlue);
+        }
+
+  
+        std::vector<std::vector<int>> convImageRed = convolve2DSlow(loadImage("datasetpreprocessing/test/cats/cat.1.png"), 0, kernelsW1Red[0]);
+        std::vector<std::vector<int>> convImageGreen = convolve2DSlow(loadImage("datasetpreprocessing/test/cats/cat.1.png"), 1, kernelsW1Green[0]);
+        std::vector<std::vector<int>> convImageBlue = convolve2DSlow(loadImage("datasetpreprocessing/test/cats/cat.1.png"), 2, kernelsW1Blue[0]);
+               
+        
+        std::cout << "firts conv size: " << convImageRed.size() << " " << convImageRed[0].size() << std::endl;
+        SizeXfirstMaxPool = convImageRed.size();
+        SizeYfirstMaxPool = convImageRed[0].size(); 
+        std::cout << "max pool 4x4" << std::endl; 
+        MaxPoolingData MaxPoolRed = MaxPool(convImageRed);
+        MaxPoolingData MaxPoolGreen = MaxPool(convImageGreen); 
+        MaxPoolingData MaxPoolBlue = MaxPool(convImageBlue);
+
+        std::cout << "MaxPool size: " << MaxPoolRed.output.size() << " " << MaxPoolRed.output[0].size() << std::endl; 
+        std::cout << "max pool 4x4" << std::endl; 
+
+        std::vector<std::vector<int>> convImageRedTwo = convolve2DSlow(MaxPoolRed.output, kernelsW2Red[0]);
+        std::vector<std::vector<int>> convImageGreenTwo = convolve2DSlow(MaxPoolGreen.output, kernelsW2Green[0]);
+        std::vector<std::vector<int>> convImageBlueTwo = convolve2DSlow(MaxPoolGreen.output, kernelsW2Blue[0]); 
+        std::cout << "two conv size: " << convImageRedTwo.size() << " " << convImageRedTwo[0].size() << std::endl; 
+        std::cout << "max pool 4x4" << std::endl; 
+
+        SizeXtwoMaxPool = convImageRedTwo.size();
+        SizeYtwoMaxPool = convImageRedTwo[0].size(); 
+        MaxPoolingData MaxPoolRedTwo = MaxPool(convImageRedTwo);
+        MaxPoolingData MaxPoolGreenTwo = MaxPool(convImageGreenTwo); 
+        MaxPoolingData MaxPoolBlueTwo = MaxPool(convImageBlueTwo);
+        
+        std::cout << "MaxPool size: " << MaxPoolRedTwo.output.size() << " " << MaxPoolRedTwo.output[0].size() << std::endl; 
+        std::cout << "dense" << std::endl; 
+
+        const char* filename = "cat pool.1.png";
+        const int xres = MaxPoolRedTwo.output.size(), yres = MaxPoolRedTwo.output[0].size(), channels = 3;
+        std::cout << "max pool size x: " <<  MaxPoolRedTwo.output.size() << std::endl;
+        std::cout << "max pool size y: " <<  MaxPoolRedTwo.output[0].size() << std::endl;
+
+        std::cout << "Red channel input neuron: " <<  MaxPoolRedTwo.output.size() * MaxPoolRedTwo.output[0].size() << std::endl;
+        std::cout << "Green channel input neuron: " <<  MaxPoolGreenTwo.output.size() * MaxPoolGreenTwo.output[0].size() << std::endl;
+        std::cout << "Blue channel input neuron: " <<  MaxPoolBlueTwo.output.size() * MaxPoolBlueTwo.output[0].size() << std::endl;        
+
+        DenseLayerSize = (MaxPoolRedTwo.output.size() * MaxPoolRedTwo.output[0].size()) + (MaxPoolGreenTwo.output.size() * MaxPoolGreenTwo.output[0].size()) + (MaxPoolBlueTwo.output.size() * MaxPoolBlueTwo.output[0].size()); 
+        std::cout << "total dense layer: " << DenseLayerSize << std::endl; 
+        
+        //    
+        // Normalization dense layer
+        //
+        for (int i=0; i<MaxPoolRedTwo.output.size(); i++) {
+            for (int j=0; j<MaxPoolRedTwo.output[0].size(); j++) {
+                inputDesnse.push_back(MaxPoolRedTwo.output[i][j]);
+            } 
+        } 
+        for (int i=0; i<MaxPoolGreenTwo.output.size(); i++) {
+            for (int j=0; j<MaxPoolGreenTwo.output[0].size(); j++) {
+                inputDesnse.push_back(MaxPoolGreenTwo.output[i][j]);
+            } 
+        }
+        for (int i=0; i<MaxPoolBlueTwo.output.size(); i++) {
+            for (int j=0; j<MaxPoolBlueTwo.output[0].size(); j++) {
+                inputDesnse.push_back(MaxPoolBlueTwo.output[i][j]);
+            } 
+        } 
+        std::cout << "inputDesnse.size(): " << inputDesnse.size() << std::endl;
+        int minInputDense = FindMin(inputDesnse);
+        int maxInputDense = FindMax(inputDesnse);
+        
+          
+        for (int j=0; j<inputDesnse.size(); j++) {
+            //std::cout << "num: " << j << " inputDesnse: " << NormalizeImage(inputDesnse[j], 1.0d, (double)minInputDense, (double)maxInputDense) << std::endl;
+            //std::cout << "min: " << (double)minInputDense << std::endl;
+            //std::cout << "max: " << (double)maxInputDense << std::endl;
+
+            inputDesnse[j] = NormalizeImage(inputDesnse[j], 1.0d, (double)minInputDense, (double)maxInputDense); 
+        }
+
+        // init input-hidden layer
+        weightsInput.resize(inputDesnse.size());
+        for (int i=0; i<inputDesnse.size(); i++) {
+            weightsInput[i].resize(weightsHiddenOneSize); 
+            for (int j=0; j<weightsHiddenOneSize; j++) {
+                weightsInput[i][j] = distribution(generator); 
+                //std::cout << "row: " << i << " columm: " << j << " weightsInput[i][j]: " << weightsInput[i][j] << std::endl;
+            } 
+        } 
+        
+        // init hidden1-hidden2 layer
+        weightsHiddenOne.resize(weightsHiddenOneSize);
+        for (int i=0; i<weightsHiddenOneSize; i++) {
+            weightsHiddenOne[i].resize(weightsHiddenTwoSize); 
+            for (int j=0; j<weightsHiddenTwoSize; j++) {
+                weightsHiddenOne[i][j] = distribution(generator);
+                //
+            } 
+        } 
+        
+        // init hidden2-output layer
+        weightsHiddenTwo.resize(weightsHiddenTwoSize);
+        for (int i=0; i<weightsHiddenTwoSize; i++) {
+            
+            weightsHiddenTwo[i].resize(weightsOutputSize); 
+            for (int j=0; j<weightsHiddenTwo[i].size(); j++) {
+                weightsHiddenTwo[i][j] = distribution(generator);
+                //std::cout << "columm: " << j << std::endl;
+                //std::cout << "row: " << i << " columm: " << j << " weightsHiddenTwo[i][j]: " << weightsHiddenTwo[i][j] << std::endl;
+            }
+        } 
+
+        /*for (int i=0; i<biasInput.size(); i++) { 
+            biasInput[i] = (double)((double)rand()) / RAND_MAX;
+            //std::cout << "biasHiddenOne[i]: " << biasHiddenOne[i] << std::endl;
+        } */        
+
+        for (int i=0; i<biasHiddenOne.size(); i++) { 
+            biasHiddenOne[i] = distribution(generator);
+            //std::cout << "biasHiddenOne[i]: " << biasHiddenOne[i] << std::endl;
+        }         
+
+        for (int i=0; i<biasHiddenTwo.size(); i++) { 
+            biasHiddenTwo[i] = distribution(generator);
+            //std::cout << "biasHiddenTwo[i]: " << biasHiddenTwo[i] << std::endl;
+        }   
+        
+        std::vector<double> HiddenFirst = dotNN(inputDesnse, weightsInput, biasHiddenOne);
+        std::vector<double> HiddenTwo = dotNN(HiddenFirst, weightsHiddenOne, biasHiddenTwo);
+        std::vector<double> OutputProb = dotNNSoftmax(HiddenTwo, weightsHiddenTwo);
+        std::cout << "----------------------------------" << std::endl;
+        std::cout << "OutputProb.size(): " << OutputProb.size() << std::endl;
+        std::cout << "Cat: " << OutputProb[0] << std::endl;
+        std::cout << "Dog: " << OutputProb[1] << std::endl;
+
+        std::cout << "loss: " << MSEloss(OutputProb, 1) << std::endl;
+        std::cout << "loss derivative 1: " << MSElossDerivative(OutputProb, 1)[0] << std::endl;
+        std::cout << "loss derivative 2: " << MSElossDerivative(OutputProb, 1)[1] << std::endl;
+        
+        std::cout << "----------------------------------" << std::endl;
+        std::cout << "inputDesnse min: " << minInputDense << std::endl;
+        std::cout << "inputDesnse max: " << maxInputDense << std::endl;
+        int pixels[xres * yres * channels];
+        int totalPixel = 0;
+        for (int i=0; i<xres; i++) {
+            for (int j=0; j<yres; j++) {
+                
+                totalPixel++;
+                pixels[totalPixel*channels] = MaxPoolRedTwo.output[i][j];
+                pixels[totalPixel*channels + 1] = MaxPoolGreenTwo.output[i][j];
+                pixels[totalPixel*channels + 2] = MaxPoolBlueTwo.output[i][j]; 
+            }
+        }
+
+        std::unique_ptr<OIIO::ImageOutput> out = OIIO::ImageOutput::create(filename);
+        OIIO::ImageSpec spec(xres, yres, channels, OIIO::TypeDesc::UINT8);
+        out->open(filename, spec);
+        out->write_image(OIIO::TypeDesc::UINT8, pixels);
+        out->close(); 
+    }
+    std::vector<std::vector<std::vector<int>>> loadImage(std::string filepath){
+        filename = filepath;
+        auto inp = OIIO::ImageInput::open(filename);
+
+
+        const OIIO::ImageSpec &spec = inp->spec();
+        int xres = spec.width;
+        int yres = spec.height;
+
+        int nchannels = spec.nchannels;
+
+        auto pixels = std::unique_ptr<int[]>(new int[xres * yres * nchannels]);
+        inp->read_image(0, 0, 0, nchannels, OIIO::TypeDesc::UINT8, &pixels[0]);
+        inp->close();
+
+        std::vector<std::vector<std::vector<int>>> Image;
+
+        std::vector<int> Rarray(xres*yres);
+        std::vector<int> Garray(xres*yres);
+        std::vector<int> Barray(xres*yres);
+        
+        for (int i=0; i<xres*yres; i++) { 
+            Rarray[i] = pixels[i*nchannels];
+            Garray[i] = pixels[i*nchannels + 1];
+            Barray[i] = pixels[i*nchannels + 2];
+
+        }
+
+        std::vector<std::vector<int>> Rprocessed(xres, std::vector<int>(yres, 0));
+        std::vector<std::vector<int>> Gprocessed(xres, std::vector<int>(yres, 0));
+        std::vector<std::vector<int>> Bprocessed(xres, std::vector<int>(yres, 0));
+        
+        int pixelFlatToXY = 0; 
+        for(unsigned int x = 0; x != xres; ++x ) {
+            for(unsigned int y = 0; y != yres; ++y ) {
+                Rprocessed[x][y] = (int)Rarray[pixelFlatToXY];
+                Gprocessed[x][y] = (int)Garray[pixelFlatToXY];
+                Bprocessed[x][y] = (int)Barray[pixelFlatToXY];
+                pixelFlatToXY++;
+            } 
+        }
+
+        Image.push_back(Rprocessed);
+        Image.push_back(Gprocessed);
+        Image.push_back(Bprocessed);
+        return Image;
+    }
+
+    std::vector<std::string> getAllFiles(std::string pathfiles){
+        std::string path = pathfiles;
+        for (const auto & entry : std::filesystem::directory_iterator(path))
+            std::cout << entry.path() << std::endl;
+    }
+    void loadDataset(){
+        std::string pathCat = "datasetpreprocessing/train/cats";
+        std::string pathDog = "datasetpreprocessing/train/dogs";
+        int size = 100;
+        int iterSize = 0;
+        for (const auto & entry : std::filesystem::directory_iterator(pathCat)){
+            if (iterSize >= size) break; 
+            std::pair<std::vector<std::vector<std::vector<int>>>, int> catData;
+            catData = std::make_pair(loadImage(entry.path().string()), 0);
+
+            dataset.push_back(catData);
+            std::cout << "amount dataset load: " << dataset.size() << std::endl;
+            iterSize++;
+
+        }
+            //std::cout << entry.path() << std::endl;
+        for (const auto & entry : std::filesystem::directory_iterator(pathDog)){
+            if (iterSize >= size) break;  
+                std::pair<std::vector<std::vector<std::vector<int>>>, int> dogData;
+                dogData = std::make_pair(loadImage(entry.path().string()), 1);
+                dataset.push_back(dogData);
+                std::cout << "amount dataset load: " << dataset.size() << std::endl;
+            iterSize++;
+
+        }
+        std::cout << "amount dataset: " << dataset.size() << std::endl;
+    }
+
+    void train(){
+        int sizeDatasetLearning = 10;
+        std::vector<double> inputNN;
+        std::vector<double> HiddenFirst;
+        std::vector<double> HiddenTwo;
+        std::vector<double> OutputProb;
+      
+
+        for (int i=0; i<amountEpoch; i++) {
+            for (int b=0; b<sizeDatasetLearning; b++){
+                std::vector<std::vector<int>> convImageRed = convolve2DSlow(dataset[b].first, 0, kernelsW1Red[0]);
+                std::vector<std::vector<int>> convImageGreen = convolve2DSlow(dataset[b].first, 1, kernelsW1Green[0]);
+                std::vector<std::vector<int>> convImageBlue = convolve2DSlow(dataset[b].first, 2, kernelsW1Blue[0]);
+                
+                SizeXfirstMaxPool = convImageRed.size();
+                SizeYfirstMaxPool = convImageRed[0].size(); 
+
+                MaxPoolingData MaxPoolRed = MaxPool(convImageRed);
+                MaxPoolingData MaxPoolGreen = MaxPool(convImageGreen); 
+                MaxPoolingData MaxPoolBlue = MaxPool(convImageBlue);
+                
+                std::vector<std::vector<int>> convImageRedTwo = convolve2DSlow(MaxPoolRed.output, kernelsW2Red[0]);
+                std::vector<std::vector<int>> convImageGreenTwo = convolve2DSlow(MaxPoolGreen.output, kernelsW2Green[0]);
+                std::vector<std::vector<int>> convImageBlueTwo = convolve2DSlow(MaxPoolGreen.output, kernelsW2Blue[0]); 
+                
+                SizeXtwoMaxPool = convImageRedTwo.size();
+                SizeYtwoMaxPool = convImageRedTwo[0].size(); 
+                MaxPoolingData MaxPoolRedTwo = MaxPool(convImageRedTwo);
+                MaxPoolingData MaxPoolGreenTwo = MaxPool(convImageGreenTwo); 
+                MaxPoolingData MaxPoolBlueTwo = MaxPool(convImageBlueTwo);
+       
+                for (int i=0; i<MaxPoolRedTwo.output.size(); i++) {
+                    for (int j=0; j<MaxPoolRedTwo.output[0].size(); j++) {
+                        inputNN.push_back(MaxPoolRedTwo.output[i][j]);
+                    } 
+                } 
+                for (int i=0; i<MaxPoolGreenTwo.output.size(); i++) {
+                    for (int j=0; j<MaxPoolGreenTwo.output[0].size(); j++) {
+                        inputNN.push_back(MaxPoolGreenTwo.output[i][j]);
+                    } 
+                }
+                for (int i=0; i<MaxPoolBlueTwo.output.size(); i++) {
+                    for (int j=0; j<MaxPoolBlueTwo.output[0].size(); j++) {
+                        inputNN.push_back(MaxPoolBlueTwo.output[i][j]);
+                    } 
+                } 
+        //std::cout << "inputDesnse.size(): " << inputDesnse.size() << std::endl;
+        int minInputDense = FindMin(inputNN);
+        int maxInputDense = FindMax(inputNN);
+
+          
+        for (int j=0; j<inputNN.size(); j++) {
+            //std::cout << "num: " << j << " inputDesnse: " << NormalizeImage(inputDesnse[j], 1.0d, (double)minInputDense, (double)maxInputDense) << std::endl;
+            inputNN[j] = NormalizeImage(inputNN[j], 1.0d, (double)minInputDense, (double)maxInputDense); 
+        }
+
+                HiddenFirst = dotNN(inputNN, weightsInput, biasHiddenOne);
+                /* 
+                for (int j=0;j < HiddenFirst.size();j++){
+                    std::cout << "HiddenFirst: " << HiddenFirst[j] << std::endl;
+                }*/ 
+                HiddenTwo = dotNN(HiddenFirst, weightsHiddenOne, biasHiddenTwo);
+                /*for (int j=0;j < HiddenTwo.size();j++){
+                    std::cout << "HiddenTwo: " << HiddenTwo[j] << std::endl;
+                } */
+                OutputProb = dotNNSoftmax(HiddenTwo, weightsHiddenTwo);
+                /*for (int j=0;j < OutputProb.size();j++){
+                    std::cout << "OutputProb: " << OutputProb[j] << std::endl;
+                }*/
+                //std::vector<std::vector<double>> GradWeightsHiddenTwo; 
+                std::vector<double> grad_temp_output;
+                 
+                std::cout << "OutputProb: " << OutputProb.size() << std::endl;
+
+                std::cout << "------------------------------------------------" << std::endl;
+                //std::cout << "Num train: " << b << std::endl;
+                std::cout << "Epoch: " << i << std::endl;
+                std::cout << "Loss: " << MSEloss(OutputProb, dataset[b].second) << std::endl;
+                //std::cout << "softmaxDerivative(OutputProb).size(): " << softmaxDerivative(OutputProb).size() << std::endl;
+                //std::cout << "softmaxDerivative(OutputProb)[0].size(): " << softmaxDerivative(OutputProb)[0].size() << std::endl;
+
+                /*for (int j=0; j<MSElossDerivative(OutputProb, dataset[b].second).size(); j++) {
+                    if(isnan(MSElossDerivative(OutputProb, dataset[b].second)[j])) break;
+                    //std::cout << "Loss derivative: " << MSElossDerivative(OutputProb, dataset[b].second)[j] << std::endl; 
+
+                }*/
+                //std::cout << "Matrix.size(): " << multiplyMatrix(MSElossDerivative(OutputProb, dataset[b].second), softmaxDerivative(OutputProb)).size() << std::endl;
+                //std::cout << "Matrix[0].size(): " <<multiplyMatrix(MSElossDerivative(OutputProb, dataset[b].second), softmaxDerivative(OutputProb))[0].size() << std::endl;
+                for (int i=0; i<weightsHiddenTwo.size(); i++) {
+                    for (int j=0; j<weightsHiddenTwo[i].size(); j++) {
+                        std::cout << "weightsHiddenTwo[i][j] before: " << weightsHiddenTwo[i][j] << std::endl; 
+                        weightsHiddenTwo[i][j] -= HiddenTwo[i] * multiplyMatrix(MSElossDerivative(OutputProb, dataset[b].second), softmaxDerivative(OutputProb))[j][0];
+                        std::cout << "weightsHiddenTwo[i][j] after: " << weightsHiddenTwo[i][j] << std::endl; 
+                    }
+                } 
+
+                //std::cout << "weights.size(): " << weightsHiddenTwo.size() << std::endl;
+                //std::cout << "weights[0].size(): " << weightsHiddenTwo[0].size() << std::endl;
+                //std::cout << "------------------------------------------------" << std::endl;
+                /*for (int i=0; i<softmaxDerivative(OutputProb).size(); i++) {
+                    for (int k=0; k<softmaxDerivative(OutputProb)[0].size(); k++) {
+                        if(isnan(softmaxDerivative(OutputProb)[i][k])) break;
+                        //std::cout << "softmaxDerivative: " << softmaxDerivative(OutputProb)[i][k] << std::endl;
+                    }
+                } */
+            }
+        } 
+    }
 };
 
-int main() {
+int main(){
    //srand(time(0));
    ConvolutionalNeuralNetwork cnn;
    cnn.loadDataset();

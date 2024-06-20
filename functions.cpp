@@ -3,7 +3,15 @@
 #include <math.h> 
 #include <limits.h>
 #include <cmath>
+#define EULER_NUMBER 2.71828
 
+struct MaxPoolingData
+{
+    std::vector<std::vector<int>> output;
+    std::vector<std::pair<std::pair<int, int>, int>> MaxPoolBackpropIndex;
+    int SizeXMaxPool;
+    int SizeYMaxPool;
+};
 
 template <class T>
 T FindMin(std::vector<T> array){
@@ -170,14 +178,18 @@ std::vector<double> sigmoid(const std::vector<double>& data) {
     
     
     for(unsigned i = 0; i != VECTOR_SIZE; ++i ) {
-        if (data[i] < 0){
+        /*if (data[i] < 0){
             //output[i] = 1 / (1 + exp(-data[i]));
             output[i] = exp(data[i]) / (1 + exp(data[i])); 
         }else{
             //output[i] = 1 / (1 + exp(data[i]));
             output[i] = 1 / (1 + exp(-data[i]));
-        }
-        
+        }*/
+
+        if (data[i] >= 45.) output[i] = 1.;
+        else if (data[i] <= -45.) output[i] = 0.;
+        else output[i] = 1. / (1. + std::exp(-data[i]));
+        //output[i] = (1 / (1 + pow(EULER_NUMBER, -data[i])));
     }
     
     return output;
@@ -187,12 +199,16 @@ double sigmoid(const double& data) {
     double output;
     
     //output = 1 / (1 + exp(-data));
+    /*
     if (data >= 0){
         output = 1 / (1 + exp(-data));
     }else{
         output = 1 / (1 + exp(data));
-    }    
-
+    }*/ 
+    //output = (1 / (1 + pow(EULER_NUMBER, -data)));
+    if (data >= 45.) output = 1.;
+    else if (data <= -45.) output = 0.;
+    else output = 1. / (1. + std::exp(-data));
     //std::cout << "----------------------" << std::endl;
     //std::cout << "1 / (1 + exp(-data)): " << std::endl;
     //std::cout << "sigmoid output: " << output << std::endl;
@@ -285,23 +301,24 @@ double derivativeRelu(double& data) {
 //
 std::vector<double> dotNN(std::vector<double> input, std::vector<std::vector<double>> weights, std::vector<double> bias)
 {
-    double minNum = FindMin(input);
-    double maxNum = FindMax(input);
+    double minNum = INT_MAX;
+    double maxNum = INT_MIN;
     std::vector<double> output;
-
-    for (int i = 0; i < weights[0].size(); i++) {
+    std::vector<std::vector<double>> layer = multiplyMatrix(input, weights);
+    for (int i = 0; i < weights.size(); i++) {
         double neuron = 0;
         //std::cout << "input[i] " << input[i] << std::endl;
         //std::cout << "bias[i] " << bias[i] << std::endl;
 
-        for (int j = 0; j < weights.size(); j++) {
+        for (int j = 0; j < weights[0].size(); j++) {
             //std::cout << "weights[i][j] " << weights[i][j] << std::endl;
 
             //for (int k = 0; k < weights[0].size(); k++) {
-            neuron += input[i]  * weights[i][j] + bias[i];
+            neuron = layer[i][j] + bias[i];
             //}
         }
-        output.push_back(Relu(neuron));
+
+        output.push_back(sigmoid(neuron));
     }
     
     return output; 
@@ -324,8 +341,8 @@ std::vector<double> softmax(const std::vector<double>& data) {
 }
 
 //https://stats.stackexchange.com/questions/453539/softmax-derivative-implementation
-std::vector<std::vector<double>> softmaxDerivative(const std::vector<double>& data) { 
-    const unsigned long VECTOR_SIZE = data.size();
+std::vector<std::vector<double>> softmaxDerivative(std::vector<double>& data) { 
+    const int VECTOR_SIZE = data.size();
     std::vector<double> output(VECTOR_SIZE);
     std::vector<double> softmaxData(VECTOR_SIZE);
     
@@ -333,8 +350,8 @@ std::vector<std::vector<double>> softmaxDerivative(const std::vector<double>& da
     std::vector<std::vector<double>> softmaxJacobian(VECTOR_SIZE, std::vector<double>(VECTOR_SIZE, 0)); 
     softmaxJacobian.resize(VECTOR_SIZE);
 
-    for(unsigned i = 0; i != VECTOR_SIZE-1; ++i ) {
-       for(unsigned j = 0; j != VECTOR_SIZE-1; ++j ) {
+    for(int i = 0; i != VECTOR_SIZE-1; ++i ) {
+       for(int j = 0; j != VECTOR_SIZE-1; ++j ) {
             if (i == j){
                 softmaxJacobian[i][j] = softmaxData[i] * (1 - softmaxData[i]);
             }else{
