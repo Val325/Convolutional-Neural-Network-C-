@@ -745,12 +745,28 @@ struct MaxPoolingData
                 //std::cout << "Matrix[0].size(): " <<multiplyMatrix(MSElossDerivative(OutputProb, dataset[b].second), softmaxDerivative(OutputProb))[0].size() << std::endl;
                 for (int i=0; i<weightsHiddenTwo.size(); i++) {
                     for (int j=0; j<weightsHiddenTwo[i].size(); j++) {
-                        std::cout << "weightsHiddenTwo[i][j] before: " << weightsHiddenTwo[i][j] << std::endl; 
+                        //std::cout << "weightsHiddenTwo[i][j] before: " << weightsHiddenTwo[i][j] << std::endl; 
                         weightsHiddenTwo[i][j] -= HiddenTwo[i] * multiplyMatrix(MSElossDerivative(OutputProb, dataset[b].second), softmaxDerivative(OutputProb))[j][0];
-                        std::cout << "weightsHiddenTwo[i][j] after: " << weightsHiddenTwo[i][j] << std::endl; 
+                        //std::cout << "weightsHiddenTwo[i][j] after: " << weightsHiddenTwo[i][j] << std::endl; 
                     }
-                } 
-
+                }
+                std::cout << "Matrix: " << multiplyMatrix(multiplyMatrix(MSElossDerivative(OutputProb, dataset[b].second), softmaxDerivative(OutputProb)), weightsHiddenTwo)[0].size() << std::endl;
+                //std::cout << "Matrix: " << multiplyMatrix(multiplyMatrix(MSElossDerivative(OutputProb, dataset[b].second), softmaxDerivative(OutputProb)), weightsHiddenTwo)[0][0] << std::endl;
+                std::cout << "weightsHiddenOne.size(): " << weightsHiddenOne.size() << std::endl;
+                std::cout << "weightsHiddenOne[0].size(): " << weightsHiddenOne[0].size() << std::endl;
+                
+                for (int i=0; i<weightsHiddenOne.size(); i++) {
+                    for (int j=0; j<weightsHiddenOne[i].size(); j++) {
+                        weightsHiddenOne[i][j] -= multiplyMatrix(multiplyMatrix(MSElossDerivative(OutputProb, dataset[b].second), softmaxDerivative(OutputProb)), weightsHiddenTwo)[0][i] * sigmoid(HiddenTwo[i]) * HiddenFirst[j]; 
+                    }
+                }
+                std::cout << "weights: " << multiplyMatrix(multiplyMatrix(multiplyMatrix(MSElossDerivative(OutputProb, dataset[b].second), softmaxDerivative(OutputProb)), weightsHiddenTwo)[0], weightsHiddenOne).size() << std::endl;
+                /*
+                for (int i=0; i<weightsInput.size(); i++) {
+                    for (int j=0; j<weightsInput[i].size(); j++) {
+                        weightsInput[i][j] -= 
+                    }
+                } */
                 //std::cout << "weights.size(): " << weightsHiddenTwo.size() << std::endl;
                 //std::cout << "weights[0].size(): " << weightsHiddenTwo[0].size() << std::endl;
                 //std::cout << "------------------------------------------------" << std::endl;
